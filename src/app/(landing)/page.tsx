@@ -4,7 +4,16 @@ import { useEffect, useState } from 'react';
 
 import { ClockLoader } from 'react-spinners';
 
-import { HeroSection } from '@/components/landing';
+import {
+  HeroSection,
+  TeamSection,
+  CommunitySection,
+  CTASection,
+  EventsSection,
+  GallerySection,
+  BlogSection,
+  SponsorsSection,
+} from '@/components/landing';
 
 import { AppFooter, AppHeader } from '@/components/shared';
 
@@ -32,6 +41,13 @@ export default function LandingPage() {
     >
       <AppHeader />
       <HeroSection />
+      <TeamSection />
+      <CommunitySection />
+      <CTASection />
+      <EventsSection />
+      <GallerySection />
+      <BlogSection />
+      <SponsorsSection />
       <AppFooter />
       <section
         className={cls(

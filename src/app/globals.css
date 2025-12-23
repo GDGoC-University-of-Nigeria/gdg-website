@@ -5,6 +5,7 @@
 
   --animate-pulsate: pulsate 2s ease-in-out infinite;
   --animate-fade-in: fade-in 0.5s ease-in-out;
+  --animate-scroll: scroll 20s linear infinite;
 
   --color-solid-matte-gray: #757575;
   --color-tech-white: #F5F5F5;
@@ -34,6 +35,15 @@
     }
     to {
       opacity: 1;
+    }
+  }
+
+  @keyframes scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
     }
   }
 }
@@ -70,4 +80,14 @@ input[data-autocompleted] {
 
 ::-webkit-scrollbar {
   width: 4px;
+}
+
+/* Team scroll - hide system scrollbar */
+.team-scroll {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.team-scroll::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
 }
