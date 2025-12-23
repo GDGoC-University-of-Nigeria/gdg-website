@@ -24,13 +24,13 @@ export const AppHeader = () => {
               borderBottomRightRadius: '32px',
               borderTopRightRadius: '32px',
               backgroundColor: 'white',
-              scrollbarWidth: 'none',
+              scrollbarWidth: 'none'
             }
           }
         }}
       >
         <aside className="relative flex h-full w-84 max-w-84 flex-col rounded-r-4xl bg-white pb-6 font-medium">
-          <header className="z-20 flex items-center justify-between py-3.5 px-4">
+          <header className="z-20 flex items-center justify-between px-4 py-3.5">
             <Link href="/">
               <Image
                 alt="GDG UNN Logo Banner"
@@ -45,7 +45,7 @@ export const AppHeader = () => {
               role="button"
             />
           </header>
-          <nav className="z-20 mt-15 w-full flex flex-col gap-10 px-8">
+          <nav className="z-20 mt-15 flex w-full flex-col gap-10 px-8">
             {links.header.flat().map(({ target, label }) => (
               <Link
                 onClick={() => setIsDrawerOpen(false)}
@@ -59,8 +59,11 @@ export const AppHeader = () => {
           </nav>
         </aside>
       </Drawer>
-      <header className="text-solid-matte-gray sticky top-0 right-0 left-0 z-20 flex h-16 w-full max-w-94 items-center justify-between pr-4 md:h-25 md:max-w-360 md:px-30">
-        <Link href="/">
+      <header className="text-solid-matte-gray sticky top-0 right-0 left-0 z-20 flex h-14 w-full max-w-94 items-center justify-between bg-white pr-6.5 pl-5 md:h-25 md:max-w-360 md:px-30">
+        <Link
+          className="w-38.5! origin-left scale-[47.7%] md:ml-0 md:w-auto md:scale-100"
+          href="/"
+        >
           <ReactSVG src="/graphics/logo-banner.svg" />
         </Link>
         <nav className="hidden items-center md:flex">
