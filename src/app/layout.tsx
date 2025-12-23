@@ -7,7 +7,7 @@ import './globals.css';
 type LayoutProps = React.HTMLAttributes<HTMLElement>;
 
 const productSans = localFont({
-  variable: '--font-product-sans-variable',
+  variable: '--product-sans-font',
   src: [
     {
       path: '../assets/fonts/ProductSans-BoldItalic.ttf',
