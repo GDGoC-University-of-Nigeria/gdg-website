@@ -72,8 +72,8 @@ const teamMembers: TeamMember[] = [
   },
   {
     id: 7,
-    name: 'Ihuoma Ajima',
-    role: 'Technical Writer',
+    name: 'Ihuoma Obasi',
+    role: 'Social Media Manager',
     image: techWriterImage,
     roleColor: 'text-[#4285F4]', // Google Blue
   },
