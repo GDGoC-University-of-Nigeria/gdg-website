@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
 import { ClockLoader } from 'react-spinners';
-
 import {
   HeroSection,
   TeamSection,
@@ -14,16 +12,12 @@ import {
   BlogSection,
   SponsorsSection,
 } from '@/components/landing';
-
 import { AppFooter, AppHeader } from '@/components/shared';
-
 import { useZoomFactor } from '@/hooks';
-
 import { cls } from '@/utils';
 
 export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(true);
-
   const zoomFactor = useZoomFactor();
 
   useEffect(() => {
@@ -35,7 +29,8 @@ export default function LandingPage() {
       id="landing-page"
       style={{ zoom: zoomFactor }}
       className={cls(
-        'relative mx-auto w-full max-w-94 overflow-clip md:max-w-360',
+        // Omo na wa
+        'relative mx-auto w-full overflow-x-hidden bg-white',
         isLoading && 'opacity-0'
       )}
     >
@@ -49,9 +44,10 @@ export default function LandingPage() {
       <BlogSection />
       <SponsorsSection />
       <AppFooter />
+      
       <section
         className={cls(
-          'absolute inset-0 flex h-screen w-full items-center justify-center',
+          'absolute inset-0 flex h-screen w-full items-center justify-center bg-white',
           'transition-opacity duration-500 ease-in-out',
           !isLoading && '-z-10 opacity-0'
         )}
