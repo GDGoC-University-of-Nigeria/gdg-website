@@ -65,17 +65,10 @@ const teamMembers: TeamMember[] = [
   },
   {
     id: 7,
-    name: 'Chidinma Ajima',
-    role: 'Community Manager',
-    image: communityImage,
-    roleColor: 'text-[#EA4335]',
-  },
-  {
-    id: 8,
-    name: 'Ani Stephanie',
-    role: 'Designer',
-    image: designerImage,
-    roleColor: 'text-[#34A853]',
+    name: 'Ihuoma Obasi',
+    role: 'Social Media Manager',
+    image: techWriterImage,
+    roleColor: 'text-[#4285F4]', // Google Blue
   },
 ];
 

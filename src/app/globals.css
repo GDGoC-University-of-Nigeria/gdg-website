@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-product-sans: var(--font-product-sans-variable);
+  --font-product-sans: var(--product-sans-font);
 
   --animate-pulsate: pulsate 2s ease-in-out infinite;
   --animate-fade-in: fade-in 0.5s ease-in-out;
@@ -17,7 +17,7 @@
   --breakpoint-lg: 1024px;
   --breakpoint-md: 768px;
   --breakpoint-sm: 640px;
-  --breakpoint-xs: 375px;
+  --breakpoint-xs: 376px;
 
   @keyframes pulsate {
     0%,
