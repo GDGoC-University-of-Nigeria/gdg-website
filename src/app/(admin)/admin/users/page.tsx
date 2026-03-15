@@ -11,6 +11,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [actionUserId, setActionUserId] = useState<string | null>(null);
 
   const loadUsers = async () => {
     if (!user) return;
@@ -37,6 +38,21 @@ export default function AdminUsersPage() {
           u.email.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : users;
+
+  const handleDeactivate = async (id: string) => {
+    if (!user) return;
+    if (!confirm('Deactivate this user? They will no longer be able to log in.')) return;
+    setActionUserId(id);
+    setError(null);
+    try {
+      await api.deactivateUser(id);
+      await loadUsers();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Failed to deactivate user');
+    } finally {
+      setActionUserId(null);
+    }
+  };
 
   return (
     <div className={cls('space-y-6')}>
@@ -78,6 +94,8 @@ export default function AdminUsersPage() {
                   <th className={cls('px-4 py-3 font-medium text-blackout')}>Name</th>
                   <th className={cls('px-4 py-3 font-medium text-blackout')}>Email</th>
                   <th className={cls('px-4 py-3 font-medium text-blackout')}>Admin</th>
+                  <th className={cls('px-4 py-3 font-medium text-blackout')}>Status</th>
+                  <th className={cls('px-4 py-3 font-medium text-blackout')}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -86,6 +104,26 @@ export default function AdminUsersPage() {
                     <td className={cls('px-4 py-3 text-blackout')}>{u.full_name ?? '—'}</td>
                     <td className={cls('px-4 py-3 text-solid-matte-gray')}>{u.email}</td>
                     <td className={cls('px-4 py-3')}>{u.is_admin ? 'Yes' : 'No'}</td>
+                    <td className={cls('px-4 py-3 text-sm')}>
+                      {u.is_active ? 'Active' : 'Deactivated'}
+                    </td>
+                    <td className={cls('px-4 py-3')}>
+                      {u.is_active ? (
+                        <button
+                          type="button"
+                          onClick={() => handleDeactivate(u.id)}
+                          disabled={actionUserId === u.id}
+                          className={cls(
+                            'rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors',
+                            'disabled:opacity-60'
+                          )}
+                        >
+                          {actionUserId === u.id ? '...' : 'Deactivate'}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-solid-matte-gray">No actions</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

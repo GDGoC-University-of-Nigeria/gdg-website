@@ -8,6 +8,7 @@ import nonTechLeadImage from '@/assets/non-tech-lead.png';
 import techLeadImage from '@/assets/tech-lead-1.jpg';
 import techLeadImage2 from '@/assets/tech-lead-2.jpeg';
 import communityImage from '@/assets/community.png';
+import designerImage from '@/assets/designer.jpeg';
 import designer2Image from '@/assets/designer-2.png';
 import techWriterImage from '@/assets/tech-writer.jpeg';
 
@@ -20,6 +21,7 @@ const IMAGE_BY_NAME: Record<string, StaticImageData> = {
   'Perpetual Asogwa': techLeadImage,
   'Solomon Adzape': techLeadImage2,
   'Chidinma Ajima': communityImage,
+  'Igwe Favour': designerImage,
   'Somto Ufodiama': designer2Image,
   'Ihuoma Obasi': techWriterImage,
 };
@@ -42,6 +44,8 @@ export const TeamSection = () => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [members, setMembers] = useState<TeamMemberResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     api
@@ -69,6 +73,7 @@ export const TeamSection = () => {
   }, [members.length]);
 
   const itemWidth = 220;
+  const itemTotalWidth = itemWidth + 40; // include horizontal gap (~gap-10)
   const labelWidth = Math.round(itemWidth * 0.4);
   const labelHeight = Math.round(itemWidth * 0.18);
   const labelPaddingX = 14;
@@ -77,6 +82,39 @@ export const TeamSection = () => {
   const roleTextSize = 'text-base';
   const scrollBarTrackWidth = 96;
   const scrollBarThumbWidth = 36;
+
+  useEffect(() => {
+    if (members.length === 0) return;
+    if (typeof window === 'undefined') return;
+
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile) return;
+
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const interval = setInterval(() => {
+      if (isPaused) return;
+      setCurrentIndex((prev) => {
+        const next = (prev + 1) % members.length;
+        container.scrollTo({
+          left: next * itemTotalWidth,
+          behavior: 'smooth',
+        });
+        return next;
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [members.length, isPaused, itemTotalWidth]);
+
+  const handleTouchStart = () => {
+    setIsPaused(true);
+  };
+
+  const handleTouchEnd = () => {
+    setIsPaused(false);
+  };
 
   return (
     <section className="bg-white px-6 py-16 md:px-20 md:py-24">
@@ -103,6 +141,8 @@ export const TeamSection = () => {
               <div
                 ref={scrollContainerRef}
                 className="team-scroll flex gap-10 overflow-x-auto pb-8"
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
               >
                 {members.map((member) => {
                   const fallbackImage = IMAGE_BY_NAME[member.name];

@@ -6,9 +6,17 @@ import gdgLogo from '@/assets/gdg-logo.png';
 
 type FooterAction = 'apply_to_speak' | 'volunteer' | 'contact' | null;
 
-type NavLink =
-  | { label: string; href: string; action?: never }
-  | { label: string; href?: never; action: Exclude<FooterAction, null> };
+type ActionLink = {
+  label: string;
+  action: Exclude<FooterAction, null>;
+};
+
+type HrefLink = {
+  label: string;
+  href: string;
+};
+
+type NavLink = ActionLink | HrefLink;
 
 const navSections: { title?: string; links: NavLink[] }[] = [
   {

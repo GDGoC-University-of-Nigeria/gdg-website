@@ -16,6 +16,7 @@ export type User = {
   phone: string | null;
   is_admin: boolean;
   created_at: string;
+  is_active: boolean;
 };
 
 export type TokenResponse = {
@@ -135,6 +136,13 @@ export const api = {
 
   getUsers(): Promise<User[]> {
     return request<User[]>('/admin/users/', { credentials: 'include' });
+  },
+
+  deactivateUser(userId: string): Promise<{ message: string }> {
+    return request<{ message: string }>(`/admin/users/${userId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
   },
 
   getCommunityMembers(params?: { skip?: number; limit?: number }): Promise<User[]> {
