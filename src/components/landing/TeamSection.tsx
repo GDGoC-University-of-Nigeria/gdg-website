@@ -5,83 +5,55 @@ import Image, { StaticImageData } from 'next/image';
 
 import leadImage from '@/assets/lead.png';
 import nonTechLeadImage from '@/assets/non-tech-lead.png';
-import designerImage from '@/assets/designer.png';
 import techLeadImage from '@/assets/tech-lead-1.jpg';
 import techLeadImage2 from '@/assets/tech-lead-2.jpeg';
 import communityImage from '@/assets/community.png';
-import techWriterImage from '@/assets/tech-writer.jpeg';
+import designerImage from '@/assets/designer.jpeg';
 import designer2Image from '@/assets/designer-2.png';
+import techWriterImage from '@/assets/tech-writer.jpeg';
 
-interface TeamMember {
-  id: number;
-  name: string;
-  role: string;
-  image: StaticImageData;
-  roleColor: string;
+import { api, type TeamMemberResponse } from '@/lib/api';
+import { cls } from '@/utils';
+
+const IMAGE_BY_NAME: Record<string, StaticImageData> = {
+  'Ndubuisi Mark': leadImage,
+  'Nzeribe Mmesoma': nonTechLeadImage,
+  'Perpetual Asogwa': techLeadImage,
+  'Solomon Adzape': techLeadImage2,
+  'Chidinma Ajima': communityImage,
+  'Igwe Favour': designerImage,
+  'Somto Ufodiama': designer2Image,
+  'Ihuoma Obasi': techWriterImage,
+};
+
+const ROLE_COLORS: Record<string, string> = {
+  'Lead': 'text-[#FBBC04]',
+  'Operations Lead': 'text-[#EA4335]',
+  'Technical Lead': 'text-[#4285F4]',
+  'Community Manager': 'text-[#EA4335]',
+  'Designer': 'text-[#34A853]',
+  'Social Media Manager': 'text-[#4285F4]',
+};
+
+function getRoleColor(role: string): string {
+  return ROLE_COLORS[role] ?? 'text-[#4285F4]';
 }
-
-const teamMembers: TeamMember[] = [
-  {
-    id: 1,
-    name: 'Ndubuisi Mark',
-    role: 'Lead',
-    image: leadImage,
-    roleColor: 'text-[#FBBC04]', // Google Yellow
-  },
-  {
-    id: 2,
-    name: 'Nzeribe Mmesoma',
-    role: 'Non-Technical Lead',
-    image: nonTechLeadImage,
-    roleColor: 'text-[#EA4335]', // Google Blue
-  },
-  {
-    id: 3,
-    name: 'Ani Stephanie',
-    role: 'Designer',
-    image: designerImage,
-    roleColor: 'text-[#34A853]', // Google Green
-  },
-  {
-    id: 4,
-    name: 'Perpetual Asogwa',
-    role: 'Technical Lead',
-    image: techLeadImage,
-    roleColor: 'text-[#4285F4]', // Google Blue
-  },
-  {
-    id: 5,
-    name: 'Solomon Adzape',
-    role: 'Technical Lead',
-    image: techLeadImage2,
-    roleColor: 'text-[#FBBC04]', // Google Yellow
-  },
-  {
-    id: 6,
-    name: 'Chidinma Ajima',
-    role: 'Community Manager',
-    image: communityImage,
-    roleColor: 'text-[#EA4335]', // Google Red
-  },
-  {
-    id: 8,
-    name: 'Somto Ufodiama',
-    role: 'Designer',
-    image: designer2Image,
-    roleColor: 'text-[#34A853]', // Google Green
-  },
-  {
-    id: 7,
-    name: 'Ihuoma Obasi',
-    role: 'Social Media Manager',
-    image: techWriterImage,
-    roleColor: 'text-[#4285F4]', // Google Blue
-  },
-];
 
 export const TeamSection = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [members, setMembers] = useState<TeamMemberResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    api
+      .getTeam()
+      .then((list) => setMembers(Array.isArray(list) ? list : []))
+      .catch(() => setMembers([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -95,28 +67,58 @@ export const TeamSection = () => {
     };
 
     container.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial check
+    handleScroll();
 
     return () => container.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [members.length]);
 
-  // Define new item width, label, and font sizes
-  const itemWidth = 220; // px (was 160)
-  const labelWidth = Math.round(itemWidth * 0.40); // Proportion to image size
+  const itemWidth = 220;
+  const itemTotalWidth = itemWidth + 40; // include horizontal gap (~gap-10)
+  const labelWidth = Math.round(itemWidth * 0.4);
   const labelHeight = Math.round(itemWidth * 0.18);
-  const labelPaddingX = 14; // px, equivalent to "px-3"
-  const labelPaddingY = 5; // px, a bit bigger than "py-1"
-  const nameTextSize = "text-lg"; // bigger than text-sm
-  const roleTextSize = "text-base"; // bigger than text-xs
+  const labelPaddingX = 14;
+  const labelPaddingY = 5;
+  const nameTextSize = 'text-lg';
+  const roleTextSize = 'text-base';
+  const scrollBarTrackWidth = 96;
+  const scrollBarThumbWidth = 36;
 
-  // Scrollbar adjustments
-  const scrollBarTrackWidth = 96; // px (was 64)
-  const scrollBarThumbWidth = 36; // px (was 24)
+  useEffect(() => {
+    if (members.length === 0) return;
+    if (typeof window === 'undefined') return;
+
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile) return;
+
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const interval = setInterval(() => {
+      if (isPaused) return;
+      setCurrentIndex((prev) => {
+        const next = (prev + 1) % members.length;
+        container.scrollTo({
+          left: next * itemTotalWidth,
+          behavior: 'smooth',
+        });
+        return next;
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [members.length, isPaused, itemTotalWidth]);
+
+  const handleTouchStart = () => {
+    setIsPaused(true);
+  };
+
+  const handleTouchEnd = () => {
+    setIsPaused(false);
+  };
 
   return (
     <section className="bg-white px-6 py-16 md:px-20 md:py-24">
       <div className="mx-auto max-w-6xl">
-        {/* Header */}
         <div className="mb-12 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <h2 className="text-2xl font-normal text-blackout md:text-3xl">
             The Builders.
@@ -129,100 +131,125 @@ export const TeamSection = () => {
           </p>
         </div>
 
-        {/* Team Grid - Scrollable */}
         <div className="relative">
-          <div
-            ref={scrollContainerRef}
-            className="team-scroll flex gap-10 overflow-x-auto pb-8"
-          >
-          {teamMembers.map((member) => (
-            <div
-              key={member.id}
-              className={`group w-[${itemWidth}px] flex-shrink-0`}
-              style={{
-                width: `${itemWidth}px`,
-                minWidth: `${itemWidth}px`
-              }}
-            >
-              {/* Photo Box */}
-              <div className="relative mb-6 flex aspect-square w-full items-end justify-end overflow-hidden rounded-xl bg-gray-100"
-                   style={{ minHeight: `${itemWidth}px` }}>
-                <Image
-                  src={member.image}
-                  alt={member.name}
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  sizes={`${itemWidth}px`}
-                />
-                {/* Corner Label with Inverse Rounded Corners */}
+          {loading ? (
+            <p className="py-12 text-center text-solid-matte-gray">Loading...</p>
+          ) : members.length === 0 ? (
+            <p className="py-12 text-center text-solid-matte-gray">No team members to display.</p>
+          ) : (
+            <>
+              <div
+                ref={scrollContainerRef}
+                className="team-scroll flex gap-10 overflow-x-auto pb-8"
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+              >
+                {members.map((member) => {
+                  const fallbackImage = IMAGE_BY_NAME[member.name];
+                  const imageUrl = member.image_url || null;
+                  return (
+                    <div
+                      key={member.id}
+                      className={cls('group shrink-0')}
+                      style={{
+                        width: `${itemWidth}px`,
+                        minWidth: `${itemWidth}px`,
+                      }}
+                    >
+                      <div
+                        className="relative mb-6 flex aspect-square w-full items-end justify-end overflow-hidden rounded-xl bg-gray-100"
+                        style={{ minHeight: `${itemWidth}px` }}
+                      >
+                        {imageUrl ? (
+                          <Image
+                            src={imageUrl}
+                            alt={member.name}
+                            fill
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            sizes={`${itemWidth}px`}
+                            unoptimized={imageUrl.startsWith('http')}
+                          />
+                        ) : fallbackImage ? (
+                          <Image
+                            src={fallbackImage}
+                            alt={member.name}
+                            fill
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            sizes={`${itemWidth}px`}
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center text-solid-matte-gray text-sm">
+                            {member.name.slice(0, 2)}
+                          </div>
+                        )}
+                        <div
+                          className="relative z-10 rounded-tl-md bg-white"
+                          style={{
+                            position: 'relative',
+                            width: `${labelWidth}px`,
+                            height: `${labelHeight}px`,
+                            right: 0,
+                            bottom: 0,
+                            paddingLeft: `${labelPaddingX}px`,
+                            paddingRight: `${labelPaddingX}px`,
+                            paddingTop: `${labelPaddingY}px`,
+                            paddingBottom: `${labelPaddingY}px`,
+                            display: 'flex',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <span
+                            style={{
+                              position: 'absolute',
+                              bottom: 0,
+                              left: -16,
+                              width: '16px',
+                              height: '16px',
+                              background: 'transparent',
+                              borderBottomRightRadius: '50%',
+                              zIndex: 20,
+                              boxShadow: '7px 7px 0 0 white',
+                            }}
+                          />
+                          <span
+                            style={{
+                              position: 'absolute',
+                              top: -16,
+                              right: 0,
+                              width: '16px',
+                              height: '16px',
+                              background: 'transparent',
+                              zIndex: 20,
+                              borderBottomRightRadius: '50%',
+                              boxShadow: '7px 7px 0 0 white',
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <h3 className={cls(nameTextSize, 'font-semibold text-blackout mt-2 mb-1')}>
+                        {member.name}
+                      </h3>
+                      <p className={cls(roleTextSize, getRoleColor(member.role))}>{member.role}</p>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-8 flex justify-end">
                 <div
-                  className="relative z-10 rounded-tl-md bg-white"
-                  style={{
-                    position: "relative",
-                    width: `${labelWidth}px`,
-                    height: `${labelHeight}px`,
-                    right: 0,
-                    bottom: 0,
-                    paddingLeft: `${labelPaddingX}px`,
-                    paddingRight: `${labelPaddingX}px`,
-                    paddingTop: `${labelPaddingY}px`,
-                    paddingBottom: `${labelPaddingY}px`,
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}
+                  className="relative h-[5px] rounded-full bg-gray-200"
+                  style={{ width: `${scrollBarTrackWidth}px` }}
                 >
-                  <span
+                  <div
+                    className="absolute top-0 h-full rounded-full bg-gray-400 transition-all duration-150"
                     style={{
-                      position: "absolute",
-                      bottom: 0,
-                      left: -16,
-                      width: "16px",
-                      height: "16px",
-                      background: "transparent",
-                      borderBottomRightRadius: "50%",
-                      zIndex: 20,
-                      boxShadow: "7px 7px 0 0 white"
-                    }}
-                  />
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: -16,
-                      right: 0,
-                      width: "16px",
-                      height: "16px",
-                      background: "transparent",
-                      zIndex: 20,
-                      borderBottomRightRadius: "50%",
-                      boxShadow: "7px 7px 0 0 white"
+                      width: `${scrollBarThumbWidth}px`,
+                      left: `${(scrollProgress / 100) * (scrollBarTrackWidth - scrollBarThumbWidth)}px`,
                     }}
                   />
                 </div>
               </div>
-
-              {/* Info */}
-              <h3 className={`${nameTextSize} font-semibold text-blackout mt-2 mb-1`}>{member.name}</h3>
-              <p className={`${roleTextSize} ${member.roleColor}`}>{member.role}</p>
-            </div>
-          ))}
-          </div>
-
-          {/* Custom scrollbar - bottom right */}
-          <div className="mt-8 flex justify-end">
-            <div
-              className="relative h-[5px] rounded-full bg-gray-200"
-              style={{ width: `${scrollBarTrackWidth}px` }}
-            >
-              {/* Scrollbar thumb */}
-              <div
-                className="absolute top-0 h-full rounded-full bg-gray-400 transition-all duration-150"
-                style={{
-                  width: `${scrollBarThumbWidth}px`,
-                  left: `${(scrollProgress / 100) * (scrollBarTrackWidth - scrollBarThumbWidth)}px`,
-                }}
-              />
-            </div>
-          </div>
+            </>
+          )}
         </div>
       </div>
     </section>

@@ -1,9 +1,10 @@
 'use client';
 
-import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
 import { SignUpForm, LoginForm } from '@/components/auth';
+import { useAuth } from '@/contexts/AuthContext';
 
 function AuthContent() {
   const searchParams = useSearchParams();
@@ -20,10 +21,39 @@ function AuthContent() {
   );
 }
 
+function AuthRedirectGuard({ children }: { children: React.ReactNode }) {
+  const { user, isHydrated } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isHydrated && user) {
+      router.replace('/dashboard');
+    }
+  }, [isHydrated, user, router]);
+
+  if (!isHydrated) {
+    return (
+      <div className="w-full h-full flex items-center justify-center min-h-[50vh]">
+        Loading...
+      </div>
+    );
+  }
+  if (user) {
+    return (
+      <div className="w-full h-full flex items-center justify-center min-h-[50vh]">
+        Redirecting to dashboard...
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
+
 export default function Auth() {
   return (
-    <Suspense fallback={<div className="w-full h-full flex items-center justify-center">Loading...</div>}>
-      <AuthContent />
-    </Suspense>
+    <AuthRedirectGuard>
+      <Suspense fallback={<div className="w-full h-full flex items-center justify-center min-h-[50vh]">Loading...</div>}>
+        <AuthContent />
+      </Suspense>
+    </AuthRedirectGuard>
   );
 }

@@ -8,6 +8,8 @@ import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { ApiError } from '@/lib/api';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -19,7 +21,9 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export const LoginForm = () => {
   const router = useRouter();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
     register,
@@ -32,9 +36,14 @@ export const LoginForm = () => {
     },
   });
 
-  const onSubmit = (data: LoginFormData) => {
-    console.log('Login data:', data);
-    // Handle login logic here
+  const onSubmit = async (data: LoginFormData) => {
+    setSubmitError(null);
+    try {
+      await login(data.email, data.password);
+      router.push('/dashboard');
+    } catch (e) {
+      setSubmitError(e instanceof ApiError ? e.message : 'Login failed. Please try again.');
+    }
   };
 
   const handleGoogleLogin = () => {
@@ -64,6 +73,10 @@ export const LoginForm = () => {
             start building.
           </p>
         </motion.div>
+
+        {submitError && (
+          <p className="mb-4 text-sm text-red-500 text-center">{submitError}</p>
+        )}
 
         {/* Form */}
         <motion.form
@@ -193,7 +206,6 @@ export const LoginForm = () => {
             type="button"
             onClick={() => {
               router.push('/auth?mode=signup');
-              // Scroll to top when switching modes
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             className="text-[#F9AB00] hover:text-[#EA4335] font-medium underline-offset-2 hover:underline transition-colors"

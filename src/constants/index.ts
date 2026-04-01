@@ -4,26 +4,14 @@ export const links = {
   twitter: 'https://x.com/GDG_UNN',
   header: [
     [
-      {
-        target: '/about',
-        label: 'About'
-      },
-      {
-        target: '/events',
-        label: 'Events'
-      },
-      {
-        target: '/projects',
-        label: 'Projects'
-      },
-      {
-        target: '/blog',
-        label: 'Blog'
-      }
+      { target: '/#our-vibe', label: 'About' },
+      { target: '/#events', label: 'Events' },
+      { target: '/dashboard/projects', label: 'Projects' },
+      { target: '/#blog', label: 'Blog' },
     ],
     [
       {
-        target: '/login',
+        target: '/auth?mode=login',
         label: 'Log in'
       }
     ]

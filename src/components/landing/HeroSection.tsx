@@ -50,7 +50,7 @@ export const HeroSection = () => {
             Become a member
           </Link>
           <Link 
-            href="/auth?mode=signup"
+            href="/#events"
             className="flex items-center gap-1.5 border border-[#DADCE0] bg-white px-5 py-2.5 text-sm font-medium text-blackout transition-colors hover:border-[#4285F4] hover:text-[#4285F4] rounded"
           >
             Join our next event

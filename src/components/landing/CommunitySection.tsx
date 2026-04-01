@@ -53,7 +53,7 @@ const RightBracket = () => (
 
 export const CommunitySection = () => {
   return (
-    <section className="bg-[#E8E8E8] px-6 py-16 md:px-20 md:py-24">
+    <section className="bg-[#E8E8E8] px-6 py-16 md:px-20 md:py-24" id="our-vibe">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-12 flex flex-col gap-6 md:mb-16 md:flex-row md:gap-8 md:items-center md:justify-between">

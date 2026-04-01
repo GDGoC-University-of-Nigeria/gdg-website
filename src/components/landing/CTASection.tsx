@@ -1,5 +1,4 @@
 import Image from 'next/image';
-import Link from 'next/link';
 
 import ctaImage from '@/assets/cta.png';
 
@@ -46,41 +45,17 @@ export const CTASection = () => {
 
         <p className="mb-8 max-w-md text-sm leading-relaxed text-white/90">
           The real GDG UNN action, like secret study sessions and pre-event registration
-          links happens off-site. Drop your digits to join the inner circle and stay plugged in.
+          links happens off-site. Join the WhatsApp group to stay plugged in.
         </p>
 
-        <form className="max-w-sm space-y-4">
-          <div>
-            <label htmlFor="name" className="mb-2 block text-sm text-white">
-              Name
-            </label>
-            <input
-              type="text"
-              id="name"
-              placeholder="Somto"
-              className="w-full rounded-md bg-white/20 px-4 py-3 text-sm text-white placeholder-white/60 outline-none ring-1 ring-white/30 transition-all focus:ring-2 focus:ring-white"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="phone" className="mb-2 block text-sm text-white">
-              Phone number
-            </label>
-            <input
-              type="tel"
-              id="phone"
-              placeholder="Enter your WhatsApp number"
-              className="w-full rounded-md bg-white/20 px-4 py-3 text-sm text-white placeholder-white/60 outline-none ring-1 ring-white/30 transition-all focus:ring-2 focus:ring-white"
-            />
-          </div>
-
-          <Link
-            href="/auth?mode=signup"
-            className="mt-4 inline-block rounded-md border border-white bg-transparent px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white hover:text-alexandra text-center"
-          >
-            Plug me in
-          </Link>
-        </form>
+        <a
+          href={process.env.NEXT_PUBLIC_WHATSAPP_GROUP_URL || 'https://chat.whatsapp.com/PLACEHOLDER'}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 inline-block w-full max-w-sm rounded-md border border-white bg-transparent px-6 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-white hover:text-alexandra"
+        >
+          Join WhatsApp group
+        </a>
       </div>
     </section>
   );

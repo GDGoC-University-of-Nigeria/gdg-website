@@ -1,30 +1,18 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
+import { api, ApiError } from '@/lib/api';
+import type { Event } from '@/lib/api';
+import { AppModal } from '@/components/shared';
 
-import eventImage from '@/assets/event.png';
-
-const events = [
-  {
-    id: 1,
-    title: "Landing Your First Internship: Students' Markup",
-    date: 'Sunday, February 16th',
-    location: 'Computer Science Lecture Hall',
-  },
-  {
-    id: 2,
-    title: 'Fundamentals of Deep Learning: The AI Toolkit Workshop',
-    date: 'Saturday, March 29th',
-    location: 'Roar Nigeria Hub, UNN',
-  },
-  {
-    id: 3,
-    title: 'Beyond the Pixels: UI/UX Masterclass for Beginners',
-    date: 'Friday, April 11th',
-    location: 'Engineering New Annex Hall',
-  },
-];
+function formatEventDate(d: string) {
+  return new Date(d).toLocaleDateString('en-NG', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+}
 
 const AsteriskIcon = () => (
   <svg
@@ -88,7 +76,57 @@ const ChevronRight = () => (
 
 export const EventsSection = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [isDetailsLoading, setIsDetailsLoading] = useState(false);
+  const [registerStatus, setRegisterStatus] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    api
+      .getEvents({ limit: 6 })
+      .then((list) => setEvents(Array.isArray(list) ? list : []))
+      .catch(() => setEvents([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const openDetails = async (event: Event) => {
+    setRegisterStatus(null);
+    setSelectedEvent(event);
+    setIsDetailsLoading(true);
+    try {
+      const full = await api.getEvent(event.id);
+      setSelectedEvent(full);
+    } catch {
+      // fall back to the lightweight event if details fail
+    } finally {
+      setIsDetailsLoading(false);
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!selectedEvent) return;
+    setRegisterStatus(null);
+    try {
+      await api.registerForEvent(selectedEvent.id);
+      setRegisterStatus('You are registered for this event 🎉');
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) {
+        setRegisterStatus('Please log in to register. You can sign in from the top-right of the page.');
+        return;
+      }
+      setRegisterStatus('Could not register for this event. Please try again.');
+    }
+  };
+
+  const filteredEvents = searchQuery.trim()
+    ? events.filter(
+        (e) =>
+          e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (e.location?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
+      )
+    : events;
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
@@ -101,7 +139,7 @@ export const EventsSection = () => {
   };
 
   return (
-    <section className="bg-[#F8F8F8] px-6 py-16 md:px-20 md:py-24">
+    <section className="bg-[#F8F8F8] px-6 py-16 md:px-20 md:py-24" id="events">
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-12 flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
@@ -141,39 +179,58 @@ export const EventsSection = () => {
           className="mb-8 flex gap-6 overflow-x-auto pb-4 scrollbar-hide"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {events.map((event) => (
-            <article
-              key={event.id}
-              className="min-w-[300px] flex-shrink-0 overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-md md:min-w-[340px]"
-            >
-              {/* Event Image */}
-              <div className="relative h-44 w-full">
-                <Image
-                  src={eventImage}
-                  alt={event.title}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-
-              {/* Event Details */}
-              <div className="p-5">
-                <h3 className="mb-4 min-h-[3.5rem] text-base font-medium leading-snug text-blackout">
-                  {event.title}
-                </h3>
-
-                <div className="flex items-end justify-between">
-                  <div>
-                    <p className="text-sm text-blackout">{event.date}</p>
-                    <p className="text-sm text-alexandra">{event.location}</p>
-                  </div>
-                  <button className="rounded-md bg-blackout px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-blackout/90">
-                    RSVP
-                  </button>
+          {loading ? (
+            <p className="text-sm text-solid-matte-gray py-8">Loading events...</p>
+          ) : filteredEvents.length === 0 ? (
+            <p className="text-sm text-solid-matte-gray py-8">No events found.</p>
+          ) : (
+            filteredEvents.map((event) => (
+              <article
+                key={event.id}
+                className="min-w-[300px] flex-shrink-0 overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-md md:min-w-[340px]"
+              >
+                {/* Event Image */}
+                <div className="relative h-44 w-full bg-[#E0E0E0]">
+                  {event.image_url ? (
+                    <Image
+                      src={event.image_url}
+                      alt={event.title}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-sm text-solid-matte-gray">Event</span>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </article>
-          ))}
+
+                {/* Event Details */}
+                <div className="p-5">
+                  <h3 className="mb-4 min-h-[3.5rem] text-base font-medium leading-snug text-blackout">
+                    {event.title}
+                  </h3>
+
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-sm text-blackout">{formatEventDate(event.date)}</p>
+                      {event.location && (
+                        <p className="text-sm text-alexandra">{event.location}</p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openDetails(event)}
+                      className="rounded-md bg-blackout px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-blackout/90"
+                    >
+                      View details
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))
+          )}
         </div>
 
         {/* Navigation Arrows */}
@@ -193,6 +250,94 @@ export const EventsSection = () => {
             <ChevronRight />
           </button>
         </div>
+
+        {selectedEvent && (
+          <AppModal
+            open
+            onClose={() => {
+              setSelectedEvent(null);
+              setRegisterStatus(null);
+            }}
+            title={selectedEvent.title}
+            actions={
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedEvent(null);
+                    setRegisterStatus(null);
+                  }}
+                  className="rounded-md border border-[#DADCE0] px-4 py-2 text-sm font-medium text-solid-matte-gray hover:bg-tech-white"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRegister}
+                  className="rounded-md bg-alexandra px-4 py-2 text-sm font-medium text-white hover:bg-[#357AE8]"
+                >
+                  Register
+                </button>
+              </>
+            }
+          >
+            {isDetailsLoading ? (
+              <p className="text-sm text-solid-matte-gray">Loading event details...</p>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-blackout">
+                    {formatEventDate(selectedEvent.date)}
+                  </p>
+                  {selectedEvent.start_time && selectedEvent.end_time && (
+                    <p className="text-xs text-solid-matte-gray">
+                      {selectedEvent.start_time} - {selectedEvent.end_time}
+                    </p>
+                  )}
+                  {selectedEvent.location && (
+                    <p className="text-sm text-alexandra">{selectedEvent.location}</p>
+                  )}
+                </div>
+
+                {selectedEvent.image_url && (
+                  <div className="relative h-40 w-full overflow-hidden rounded-lg bg-[#E0E0E0]">
+                    <Image
+                      src={selectedEvent.image_url}
+                      alt={selectedEvent.title}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                )}
+
+                {selectedEvent.description && (
+                  <p className="text-sm leading-relaxed text-solid-matte-gray">
+                    {selectedEvent.description}
+                  </p>
+                )}
+
+                {Array.isArray(selectedEvent.speakers) && selectedEvent.speakers.length > 0 && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-semibold text-blackout">Speakers</h4>
+                    <ul className="space-y-1 text-sm text-solid-matte-gray">
+                      {selectedEvent.speakers.map((speaker) => (
+                        <li key={speaker.id}>
+                          <span className="font-medium text-blackout">{speaker.name}</span>
+                          {speaker.topic && <> — {speaker.topic}</>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {registerStatus && (
+                  <p className="text-xs text-alexandra">{registerStatus}</p>
+                )}
+              </div>
+            )}
+          </AppModal>
+        )}
       </div>
     </section>
   );

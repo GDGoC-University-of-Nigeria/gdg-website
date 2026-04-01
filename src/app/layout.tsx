@@ -2,6 +2,8 @@ import { type Metadata } from 'next';
 
 import localFont from 'next/font/local';
 
+import { Providers } from '@/components/providers/Providers';
+
 import './globals.css';
 
 type LayoutProps = React.HTMLAttributes<HTMLElement>;
@@ -41,7 +43,9 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: LayoutProps) {
   return (
     <html lang="en" className={productSans.variable} suppressHydrationWarning>
-      <body className="font-product-sans bg-white">{children}</body>
+      <body className="font-product-sans bg-white">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

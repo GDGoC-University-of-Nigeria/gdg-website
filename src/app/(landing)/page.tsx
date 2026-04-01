@@ -16,6 +16,7 @@ import {
 } from '@/components/landing';
 
 import { AppFooter, AppHeader } from '@/components/shared';
+import { PublicForms } from '@/components/landing/PublicForms';
 
 import { useZoomFactor } from '@/hooks';
 
@@ -23,6 +24,9 @@ import { cls } from '@/utils';
 
 export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(true);
+  const [formModal, setFormModal] = useState<{ kind: 'apply_to_speak' | 'volunteer' | 'contact' | null }>({
+    kind: null,
+  });
 
   const zoomFactor = useZoomFactor();
 
@@ -48,7 +52,12 @@ export default function LandingPage() {
       <GallerySection />
       <BlogSection />
       <SponsorsSection />
-      <AppFooter />
+      <AppFooter
+        onAction={(kind) => {
+          setFormModal({ kind });
+        }}
+      />
+      <PublicForms openState={formModal} onClose={() => setFormModal({ kind: null })} />
       <section
         className={cls(
           'absolute inset-0 flex h-screen w-full items-center justify-center',

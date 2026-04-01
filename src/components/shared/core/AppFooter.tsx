@@ -4,7 +4,21 @@ import { FaGithub, FaInstagram, FaLinkedinIn, FaRegEnvelope, FaXTwitter } from '
 
 import gdgLogo from '@/assets/gdg-logo.png';
 
-const navSections = [
+type FooterAction = 'apply_to_speak' | 'volunteer' | 'contact' | null;
+
+type ActionLink = {
+  label: string;
+  action: Exclude<FooterAction, null>;
+};
+
+type HrefLink = {
+  label: string;
+  href: string;
+};
+
+type NavLink = ActionLink | HrefLink;
+
+const navSections: { title?: string; links: NavLink[] }[] = [
   {
     title: undefined,
     links: [
@@ -18,18 +32,18 @@ const navSections = [
   {
     title: 'Want to Help?',
     links: [
-      { label: 'Apply to Speak', href: '#apply-to-speak' },
-      { label: 'Volunteer with Us', href: '#volunteer' },
+      { label: 'Apply to Speak', action: 'apply_to_speak' },
+      { label: 'Volunteer with Us', action: 'volunteer' },
       { label: 'Submit an Article', href: '#submit-article' },
-      { label: 'Contact the Team', href: '#contact' }
+      { label: 'Contact the Team', action: 'contact' }
     ]
   },
   {
     title: 'Legal & Info',
     links: [
-      { label: 'Privacy Policy', href: '#privacy' },
-      { label: 'Admin Login', href: '#admin' },
-      { label: 'GDG Code of Conduct', href: '#code-of-conduct' }
+      { label: 'Privacy Policy', href: 'https://policies.google.com/privacy' },
+      { label: 'GDG Code of Conduct', href: 'https://developers.google.com/community-guidelines' },
+      { label: 'Participation Terms', href: 'https://gdg.community.dev/participation-terms/' }
     ]
   }
 ];
@@ -37,32 +51,36 @@ const navSections = [
 const socialLinks = [
   {
     label: 'Instagram',
-    href: '#instagram',
+    href: 'https://www.instagram.com/gdgoc_unn',
     icon: <FaInstagram className="h-5 w-5" aria-hidden />
   },
   {
     label: 'Email',
-    href: '#email',
+    href: 'mailto:unn.dsc@gmail.com',
     icon: <FaRegEnvelope className="h-5 w-5" aria-hidden />
   },
   {
     label: 'LinkedIn',
-    href: '#linkedin',
+    href: 'https://www.linkedin.com/company/gdgoc-unn',
     icon: <FaLinkedinIn className="h-5 w-5" aria-hidden />
   },
   {
     label: 'GitHub',
-    href: '#github',
+    href: 'https://github.com',
     icon: <FaGithub className="h-5 w-5" aria-hidden />
   },
   {
     label: 'X',
-    href: '#x',
+    href: 'https://x.com/gdg_unn',
     icon: <FaXTwitter className="h-5 w-5" aria-hidden />
   }
 ];
 
-export const AppFooter = () => {
+type AppFooterProps = {
+  onAction?: (action: Exclude<FooterAction, null>) => void;
+};
+
+export const AppFooter = ({ onAction }: AppFooterProps) => {
   return (
     <footer className="w-full bg-tech-white text-solid-matte-gray">
       <div className="mx-auto flex w-full max-w-94 flex-col gap-8 px-6 py-10 md:max-w-360 md:px-10 lg:gap-10 lg:py-14">
@@ -86,9 +104,21 @@ export const AppFooter = () => {
                 <ul className="flex flex-col gap-2 text-sm font-medium">
                   {links.map((link) => (
                     <li key={link.label}>
-                      <Link href={link.href} className="transition-colors hover:text-blackout">
-                        {link.label}
-                      </Link>
+                      {'href' in link ? (
+                        <Link href={link.href} className="transition-colors hover:text-blackout">
+                          {link.label}
+                        </Link>
+                      ) : onAction ? (
+                        <button
+                          type="button"
+                          onClick={() => onAction(link.action)}
+                          className="transition-colors hover:text-blackout"
+                        >
+                          {link.label}
+                        </button>
+                      ) : (
+                        <span className="text-solid-matte-gray">{link.label}</span>
+                      )}
                     </li>
                   ))}
                 </ul>
