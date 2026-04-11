@@ -1,25 +1,20 @@
 'use client';
 
 import { Suspense, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+
 import { AnimatePresence } from 'framer-motion';
-import { SignUpForm, LoginForm } from '@/components/auth';
+import { GoogleSignup } from '@/components/auth';
 import { useAuth } from '@/contexts/AuthContext';
 
 function AuthContent() {
-  const searchParams = useSearchParams();
-  const mode = searchParams.get('mode') || 'signup';
-
   return (
     <AnimatePresence mode="wait">
-      {mode === 'login' ? (
-        <LoginForm key="login" />
-      ) : (
-        <SignUpForm key="signup" />
-      )}
+      <GoogleSignup key="google-auth" />
     </AnimatePresence>
   );
 }
+
 
 function AuthRedirectGuard({ children }: { children: React.ReactNode }) {
   const { user, isHydrated } = useAuth();

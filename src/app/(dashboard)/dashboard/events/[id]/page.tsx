@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, ApiError } from '@/lib/api';
 import type { Event } from '@/lib/api';
@@ -115,14 +116,26 @@ export default function EventDetailPage() {
       </Link>
       <section
         className={cls(
-          'rounded-2xl border border-[#DADCE0] bg-white p-6 shadow-sm',
+          'overflow-hidden rounded-2xl border border-[#DADCE0] bg-white shadow-sm',
           'text-blackout'
         )}
       >
-        <div className={cls('flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4')}>
-          <h1 className={cls('text-2xl md:text-3xl font-medium text-blackout')}>
-            {event.title}
-          </h1>
+        {event.image_url && (
+          <div className={cls('relative w-full h-48 md:h-64 border-b border-[#DADCE0]')}>
+            <Image
+              src={event.image_url}
+              alt={event.title}
+              fill
+              className="object-cover"
+              unoptimized
+            />
+          </div>
+        )}
+        <div className={cls('p-6')}>
+          <div className={cls('flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4')}>
+            <h1 className={cls('text-2xl md:text-3xl font-medium text-blackout')}>
+              {event.title}
+            </h1>
           {user && !regChecking && (
             <button
               type="button"
@@ -184,7 +197,8 @@ export default function EventDetailPage() {
             </ul>
           </div>
         )}
-      </section>
+      </div>
+    </section>
     </div>
   );
 }

@@ -5,22 +5,22 @@ import { api, type User } from '@/lib/api';
 
 type AuthState = {
   user: User | null;
-  isLoading: boolean;
   isHydrated: boolean;
 };
 
+
 type AuthContextValue = AuthState & {
-  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
 };
+
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+
 
   const logout = useCallback(async () => {
     try {
@@ -30,16 +30,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      await api.login({ email, password });
-      const me = await api.getMe();
-      setUser(me);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,11 +58,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value: AuthContextValue = {
     user,
-    isLoading,
     isHydrated,
-    login,
     logout,
     setUser,
+
+
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
