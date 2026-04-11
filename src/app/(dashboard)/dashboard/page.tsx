@@ -155,7 +155,7 @@ export default function DashboardPage() {
       <section className={cls('bg-[#F8F8F8] px-6 py-12 md:px-20 md:py-16 -mx-4 md:-mx-6 mb-8')}>
         <div className={cls('mx-auto max-w-6xl')}>
           <h1 className={cls('text-3xl font-medium leading-tight text-blackout md:text-4xl')}>
-            Welcome back, {displayName}!
+            Welcome back, {user?.profile?.full_name || displayName}!
           </h1>
           <p className={cls('mt-2 text-sm text-solid-matte-gray md:text-base')}>
             Here&apos;s what&apos;s happening in your community.
@@ -253,6 +253,7 @@ export default function DashboardPage() {
                           alt={ev.title}
                           fill
                           className="object-cover"
+                          unoptimized
                         />
                       ) : (
                         <div className={cls('absolute inset-0 flex items-center justify-center')}>

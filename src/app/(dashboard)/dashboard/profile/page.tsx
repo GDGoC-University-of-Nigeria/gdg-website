@@ -21,6 +21,7 @@ export default function ProfilePage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [bio, setBio] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -33,9 +34,10 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-      setFullName(user.full_name ?? '');
+      setFullName(user.profile?.full_name ?? '');
       setEmail(user.email ?? '');
-      setPhone(user.phone ?? '');
+      setPhone(user.profile?.phone ?? '');
+      setBio(user.profile?.bio ?? '');
     }
   }, [user]);
 
@@ -77,8 +79,8 @@ export default function ProfilePage() {
     try {
       const updated = await api.updateMe({
         full_name: fullName || null,
-        email: email || null,
         phone: phone || null,
+        bio: bio || null,
       });
       setUser(updated);
       setSuccess(true);
@@ -141,18 +143,21 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <label className={cls('block text-sm font-medium text-blackout mb-1')}>
-                    Email
+                    Email (Primary)
                   </label>
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    readOnly
                     className={cls(
-                      'w-full px-4 py-2 border border-[#DADCE0] rounded-lg',
-                      'focus:outline-none focus:ring-2 focus:ring-alexandra focus:border-transparent',
-                      'text-blackout'
+                      'w-full px-4 py-2 border border-[#DADCE0] rounded-lg bg-gray-50 cursor-not-allowed',
+                      'focus:outline-none focus:ring-1 focus:ring-gray-200',
+                      'text-solid-matte-gray'
                     )}
                   />
+                  <p className="mt-1 text-xs text-solid-matte-gray italic">
+                    Linked to your Google account.
+                  </p>
                 </div>
                 <div>
                   <label className={cls('block text-sm font-medium text-blackout mb-1')}>
@@ -166,6 +171,22 @@ export default function ProfilePage() {
                       'w-full px-4 py-2 border border-[#DADCE0] rounded-lg',
                       'focus:outline-none focus:ring-2 focus:ring-alexandra focus:border-transparent',
                       'text-blackout'
+                    )}
+                  />
+                </div>
+                <div>
+                  <label className={cls('block text-sm font-medium text-blackout mb-1')}>
+                    Bio
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Tell us about yourself..."
+                    className={cls(
+                      'w-full px-4 py-2 border border-[#DADCE0] rounded-lg',
+                      'focus:outline-none focus:ring-2 focus:ring-alexandra focus:border-transparent',
+                      'text-blackout resize-none'
                     )}
                   />
                 </div>
@@ -200,7 +221,7 @@ export default function ProfilePage() {
               <>
                 <div className={cls('space-y-2')}>
                   <p className={cls('text-sm text-solid-matte-gray')}>Full name</p>
-                  <p className={cls('font-medium text-blackout')}>{user?.full_name ?? '—'}</p>
+                  <p className={cls('font-medium text-blackout')}>{user?.profile?.full_name ?? '—'}</p>
                 </div>
                 <div className={cls('space-y-2 mt-4')}>
                   <p className={cls('text-sm text-solid-matte-gray')}>Email</p>
@@ -208,7 +229,11 @@ export default function ProfilePage() {
                 </div>
                 <div className={cls('space-y-2 mt-4')}>
                   <p className={cls('text-sm text-solid-matte-gray')}>Phone</p>
-                  <p className={cls('font-medium text-blackout')}>{user?.phone ?? '—'}</p>
+                  <p className={cls('font-medium text-blackout')}>{user?.profile?.phone ?? '—'}</p>
+                </div>
+                <div className={cls('space-y-2 mt-4')}>
+                  <p className={cls('text-sm text-solid-matte-gray')}>Bio</p>
+                  <p className={cls('font-medium text-blackout whitespace-pre-wrap')}>{user?.profile?.bio ?? 'No bio yet.'}</p>
                 </div>
                 <button
                   type="button"

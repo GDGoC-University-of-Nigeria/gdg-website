@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, ApiError } from '@/lib/api';
 import type { Event, Speaker } from '@/lib/api';
@@ -289,8 +290,32 @@ function CreateEventModal({
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className={cls('w-full px-3 py-2 border border-[#DADCE0] rounded-lg focus:outline-none focus:ring-2 focus:ring-alexandra')} />
           </div>
           <div>
-            <label className={cls('block text-sm font-medium text-blackout mb-1')}>Image URL</label>
-            <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className={cls('w-full px-3 py-2 border border-[#DADCE0] rounded-lg focus:outline-none focus:ring-2 focus:ring-alexandra')} />
+            <label className={cls('block text-sm font-medium text-blackout mb-1')}>Event image</label>
+            <div className={cls('space-y-2')}>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setSubmitting(true);
+                  try {
+                    const { url } = await api.uploadImage(file);
+                    setImageUrl(url);
+                  } catch (e) {
+                    onError(e instanceof ApiError ? e.message : 'Upload failed');
+                  } finally {
+                    setSubmitting(false);
+                  }
+                }}
+                className={cls('w-full px-3 py-2 border border-[#DADCE0] rounded-lg text-sm transition-colors hover:bg-tech-white')}
+              />
+              {imageUrl && (
+                <div className={cls('relative h-32 w-full rounded-lg overflow-hidden border border-[#DADCE0]')}>
+                  <Image src={imageUrl} alt="Preview" fill className="object-cover" unoptimized />
+                </div>
+              )}
+            </div>
           </div>
           <div className={cls('flex gap-2 pt-2')}>
             <button type="submit" disabled={submitting} className={cls('px-4 py-2 bg-alexandra text-white font-medium rounded-lg hover:bg-[#357AE8] disabled:opacity-60')}>
@@ -396,8 +421,32 @@ function EditEventModal({
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className={cls('w-full px-3 py-2 border border-[#DADCE0] rounded-lg focus:outline-none focus:ring-2 focus:ring-alexandra')} />
           </div>
           <div>
-            <label className={cls('block text-sm font-medium text-blackout mb-1')}>Image URL</label>
-            <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className={cls('w-full px-3 py-2 border border-[#DADCE0] rounded-lg focus:outline-none focus:ring-2 focus:ring-alexandra')} />
+            <label className={cls('block text-sm font-medium text-blackout mb-1')}>Event image</label>
+            <div className={cls('space-y-2')}>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setSubmitting(true);
+                  try {
+                    const { url } = await api.uploadImage(file);
+                    setImageUrl(url);
+                  } catch (e) {
+                    onError(e instanceof ApiError ? e.message : 'Upload failed');
+                  } finally {
+                    setSubmitting(false);
+                  }
+                }}
+                className={cls('w-full px-3 py-2 border border-[#DADCE0] rounded-lg text-sm transition-colors hover:bg-tech-white')}
+              />
+              {imageUrl && (
+                <div className={cls('relative h-32 w-full rounded-lg overflow-hidden border border-[#DADCE0]')}>
+                  <Image src={imageUrl} alt="Preview" fill className="object-cover" unoptimized />
+                </div>
+              )}
+            </div>
           </div>
           <div className={cls('flex gap-2 pt-2')}>
             <button type="submit" disabled={submitting} className={cls('px-4 py-2 bg-alexandra text-white font-medium rounded-lg hover:bg-[#357AE8] disabled:opacity-60')}>
@@ -537,7 +586,34 @@ function SpeakerManagementModal({
             <input type="text" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Topic" className={cls('w-full px-3 py-2 border border-[#DADCE0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-alexandra')} />
             <input type="text" value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="Niche/expertise *" required className={cls('w-full px-3 py-2 border border-[#DADCE0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-alexandra')} />
             <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Bio *" required rows={2} className={cls('w-full px-3 py-2 border border-[#DADCE0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-alexandra')} />
-            <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Image URL (optional)" className={cls('w-full px-3 py-2 border border-[#DADCE0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-alexandra')} />
+            <div>
+              <label className={cls('block text-sm font-medium text-blackout mb-1')}>Speaker image</label>
+              <div className={cls('space-y-2')}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setAddLoading(true);
+                    try {
+                      const { url } = await api.uploadImage(file);
+                      setImageUrl(url);
+                    } catch (e) {
+                      setError(e instanceof ApiError ? e.message : 'Upload failed');
+                    } finally {
+                      setAddLoading(false);
+                    }
+                  }}
+                  className={cls('w-full px-3 py-2 border border-[#DADCE0] rounded-lg text-sm transition-colors hover:bg-tech-white')}
+                />
+                {imageUrl && (
+                  <div className={cls('relative h-20 w-20 rounded-full overflow-hidden border border-[#DADCE0]')}>
+                    <Image src={imageUrl} alt="Preview" fill className="object-cover" unoptimized />
+                  </div>
+                )}
+              </div>
+            </div>
             <div className={cls('flex gap-2')}>
               <button type="submit" disabled={addLoading} className={cls('px-4 py-2 bg-alexandra text-white font-medium rounded-lg text-sm hover:bg-[#357AE8] disabled:opacity-60')}>
                 {addLoading ? 'Adding...' : 'Add'}

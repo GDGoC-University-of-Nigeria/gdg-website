@@ -5,19 +5,25 @@
 
 const getApiUrl = (): string => {
   const url = process.env.NEXT_PUBLIC_API_URL;
-  if (!url) return 'http://127.0.0.1:8000';
+  if (!url) return 'http://localhost:8000';
   return url.replace(/\/$/, '');
 };
 
 export type User = {
   id: string;
   email: string;
-  full_name: string | null;
-  phone: string | null;
   is_admin: boolean;
-  created_at: string;
   is_active: boolean;
+  created_at: string;
+  profile: {
+    full_name: string | null;
+    phone: string | null;
+    avatar_url: string | null;
+    bio: string | null;
+    is_complete: boolean;
+  } | null;
 };
+
 
 export type TokenResponse = {
   access_token: string;
@@ -36,7 +42,10 @@ export type UpdateUserPayload = {
   email?: string | null;
   full_name?: string | null;
   phone?: string | null;
+  avatar_url?: string | null;
+  bio?: string | null;
 };
+
 
 export class ApiError extends Error {
   constructor(
@@ -56,11 +65,23 @@ export type PublicFormPayload = {
   payload: unknown;
 };
 
+// ── In-memory access token (set after OAuth callback) ──────────────────────
+let _accessToken: string | null = null;
+
+export function setAccessToken(token: string | null) {
+  _accessToken = token;
+}
+
+export function getAccessToken(): string | null {
+  return _accessToken;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const base = getApiUrl();
   const url = path.startsWith('http') ? path : `${base}${path.startsWith('/') ? '' : '/'}${path}`;
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
+    ...(_accessToken ? { Authorization: `Bearer ${_accessToken}` } : {}),
     ...(options.headers as Record<string, string>),
   };
   const res = await fetch(url, { ...options, headers, credentials: 'include' });
@@ -86,20 +107,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export const api = {
   getApiUrl,
 
-  login(payload: LoginPayload): Promise<TokenResponse> {
-    return request<TokenResponse>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      credentials: 'include',
-    });
-  },
-
-  adminLogin(payload: LoginPayload): Promise<TokenResponse> {
-    return request<TokenResponse>('/api/v1/admin/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      credentials: 'include',
-    });
+  getGoogleAuthUrl(): string {
+    return `${getApiUrl()}/auth/google`;
   },
 
   logout(): Promise<{ message: string }> {
@@ -109,18 +118,7 @@ export const api = {
     });
   },
 
-  register(payload: RegisterPayload): Promise<User> {
-    return request<User>('/auth/signup', {
-      method: 'POST',
-      body: JSON.stringify({
-        email: payload.email,
-        full_name: payload.full_name,
-        password: payload.password,
-        confirm_password: payload.confirm_password ?? payload.password,
-        phone: payload.phone ?? undefined,
-      }),
-    });
-  },
+
 
   getMe(): Promise<User> {
     return request<User>('/users/me', { credentials: 'include' });
@@ -309,6 +307,16 @@ export const api = {
 
   deleteProject(id: string): Promise<void> {
     return request<void>(`/api/v1/projects/${id}`, { method: 'DELETE', credentials: 'include' });
+  },
+
+  async uploadImage(file: File): Promise<{ url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return request<{ url: string }>('/api/v1/media/upload', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    });
   },
 
   getProjectContributors(projectId: string): Promise<ProjectContributor[]> {

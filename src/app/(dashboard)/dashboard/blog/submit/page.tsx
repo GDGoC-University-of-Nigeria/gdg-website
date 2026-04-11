@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, ApiError } from '@/lib/api';
 import { cls } from '@/utils';
@@ -112,21 +113,40 @@ export default function BlogSubmitPage() {
             />
           </div>
           <div>
-            <label htmlFor="imageUrl" className={cls('block text-sm font-medium text-blackout mb-1')}>
-              Image URL (optional)
+            <label htmlFor="image" className={cls('block text-sm font-medium text-blackout mb-1')}>
+              Feature image
             </label>
-            <input
-              id="imageUrl"
-              type="url"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              className={cls(
-                'w-full px-4 py-2 border border-[#DADCE0] rounded-lg',
-                'focus:outline-none focus:ring-2 focus:ring-alexandra focus:border-transparent',
-                'text-blackout placeholder:text-[#9AA0A6]'
+            <div className={cls('space-y-2')}>
+              <input
+                id="image"
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setSubmitting(true);
+                  setError(null);
+                  try {
+                    const { url } = await api.uploadImage(file);
+                    setImageUrl(url);
+                  } catch (e) {
+                    setError(e instanceof ApiError ? e.message : 'Upload failed');
+                  } finally {
+                    setSubmitting(false);
+                  }
+                }}
+                className={cls(
+                  'w-full px-4 py-2 border border-[#DADCE0] rounded-lg',
+                  'focus:outline-none focus:ring-2 focus:ring-alexandra focus:border-transparent',
+                  'text-sm transition-colors hover:bg-tech-white'
+                )}
+              />
+              {imageUrl && (
+                <div className={cls('relative h-32 w-48 rounded-lg overflow-hidden border border-[#DADCE0]')}>
+                  <Image src={imageUrl} alt="Preview" fill className="object-cover" unoptimized />
+                </div>
               )}
-              placeholder="https://..."
-            />
+            </div>
           </div>
           {error && (
             <p className={cls('text-sm text-red-600')}>{error}</p>

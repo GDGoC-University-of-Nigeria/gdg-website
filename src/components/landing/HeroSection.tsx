@@ -44,7 +44,7 @@ export const HeroSection = () => {
         {/* CTA buttons */}
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link 
-            href="/auth?mode=signup"
+            href="/auth"
             className="bg-[#4285F4] px-5 py-2.5 text-sm font-medium text-white shadow-[0_8px_20px_rgba(66,133,244,0.35)] transition-transform hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(66,133,244,0.4)] rounded"
           >
             Become a member

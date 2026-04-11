@@ -23,7 +23,7 @@ function getHeaderLinks(isLoggedIn: boolean, isAdmin: boolean): LinkItem[][] {
         ...(isAdmin ? [{ target: '/admin', label: 'Admin' }] : []),
         { target: '#', label: 'Log out' }
       ]
-    : [{ target: '/auth?mode=login', label: 'Log in' }];
+    : [{ target: '/auth', label: 'Log in' }];
   return [base, authGroup];
 }
 

@@ -11,7 +11,8 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isHydrated) return;
     if (!user) {
-      router.replace('/auth?mode=login');
+      router.replace('/auth');
+
     }
   }, [isHydrated, user, router]);
 
