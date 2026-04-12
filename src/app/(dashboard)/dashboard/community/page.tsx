@@ -18,6 +18,7 @@ export default function CommunityPage() {
 
   useEffect(() => {
     if (!user) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
     const skip = (page - 1) * PAGE_SIZE;
@@ -37,7 +38,10 @@ export default function CommunityPage() {
   const filteredMembers = searchQuery.trim()
     ? members.filter(
         (u) =>
-          (u.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+          (u.profile?.full_name
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ??
+            false) ||
           u.email.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : members;
@@ -47,7 +51,7 @@ export default function CommunityPage() {
 
   return (
     <div className={cls('space-y-6')}>
-      <h1 className={cls('text-2xl md:text-3xl font-medium text-blackout')}>
+      <h1 className={cls('text-blackout text-2xl font-medium md:text-3xl')}>
         Community directory
       </h1>
       <section
@@ -56,23 +60,23 @@ export default function CommunityPage() {
           'text-blackout'
         )}
       >
-        <p className={cls('text-sm text-solid-matte-gray mb-4')}>
+        <p className={cls('text-solid-matte-gray mb-4 text-sm')}>
           Search members by name or email.
         </p>
-        <div className={cls('flex gap-2 mb-6')}>
+        <div className={cls('mb-6 flex gap-2')}>
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by name or email..."
             className={cls(
-              'flex-1 px-4 py-2 border border-[#DADCE0] rounded-lg',
-              'focus:outline-none focus:ring-2 focus:ring-alexandra focus:border-transparent',
+              'flex-1 rounded-lg border border-[#DADCE0] px-4 py-2',
+              'focus:ring-alexandra focus:border-transparent focus:ring-2 focus:outline-none',
               'text-blackout placeholder:text-[#9AA0A6]'
             )}
           />
         </div>
-        {error && <p className={cls('text-sm text-red-600 mb-4')}>{error}</p>}
+        {error && <p className={cls('mb-4 text-sm text-red-600')}>{error}</p>}
         {loading ? (
           <p className={cls('text-solid-matte-gray')}>Loading...</p>
         ) : (
@@ -81,26 +85,32 @@ export default function CommunityPage() {
               <li
                 key={u.id}
                 className={cls(
-                  'flex items-center justify-between py-3 px-4 rounded-lg',
+                  'flex items-center justify-between rounded-lg px-4 py-3',
                   'bg-tech-white border border-[#DADCE0]'
                 )}
               >
-                <span className={cls('font-medium text-blackout')}>
-                  {u.full_name ?? u.email}
+                <span className={cls('text-blackout font-medium')}>
+                  {u.profile?.full_name ?? u.email}
                 </span>
-                <span className={cls('text-sm text-solid-matte-gray')}>{u.email}</span>
+                <span className={cls('text-solid-matte-gray text-sm')}>
+                  {u.email}
+                </span>
               </li>
             ))}
           </ul>
         )}
         {!loading && filteredMembers.length === 0 && (
-          <p className={cls('text-sm text-solid-matte-gray mt-4')}>
+          <p className={cls('text-solid-matte-gray mt-4 text-sm')}>
             {searchQuery.trim() ? 'No results found.' : 'No members yet.'}
           </p>
         )}
         {!loading && members.length > 0 && (
-          <div className={cls('flex items-center justify-between mt-6 pt-4 border-t border-[#DADCE0]')}>
-            <span className={cls('text-sm text-solid-matte-gray')}>
+          <div
+            className={cls(
+              'mt-6 flex items-center justify-between border-t border-[#DADCE0] pt-4'
+            )}
+          >
+            <span className={cls('text-solid-matte-gray text-sm')}>
               Page {page}
             </span>
             <div className={cls('flex gap-2')}>
@@ -109,9 +119,11 @@ export default function CommunityPage() {
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={!hasPrev}
                 className={cls(
-                  'px-3 py-1.5 rounded-lg text-sm font-medium',
-                  'border border-[#DADCE0] text-blackout',
-                  hasPrev ? 'hover:bg-tech-white' : 'opacity-50 cursor-not-allowed'
+                  'rounded-lg px-3 py-1.5 text-sm font-medium',
+                  'text-blackout border border-[#DADCE0]',
+                  hasPrev
+                    ? 'hover:bg-tech-white'
+                    : 'cursor-not-allowed opacity-50'
                 )}
               >
                 Prev
@@ -121,9 +133,11 @@ export default function CommunityPage() {
                 onClick={() => setPage((p) => p + 1)}
                 disabled={!hasNext}
                 className={cls(
-                  'px-3 py-1.5 rounded-lg text-sm font-medium',
-                  'border border-[#DADCE0] text-blackout',
-                  hasNext ? 'hover:bg-tech-white' : 'opacity-50 cursor-not-allowed'
+                  'rounded-lg px-3 py-1.5 text-sm font-medium',
+                  'text-blackout border border-[#DADCE0]',
+                  hasNext
+                    ? 'hover:bg-tech-white'
+                    : 'cursor-not-allowed opacity-50'
                 )}
               >
                 Next
