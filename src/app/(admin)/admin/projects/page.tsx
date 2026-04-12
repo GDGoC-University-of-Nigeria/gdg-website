@@ -518,7 +518,7 @@ function TeamManagementModal({
 
   const getUserName = (userId: string) => {
     const u = users.find((u) => u.id === userId);
-    return u?.full_name ?? u?.email ?? userId.slice(0, 8);
+    return u?.profile?.full_name ?? u?.email ?? userId.slice(0, 8);
   };
 
   return (
@@ -583,7 +583,7 @@ function TeamManagementModal({
                       .filter((u) => !contributors.some((c) => c.user_id === u.id))
                       .map((u) => (
                         <option key={u.id} value={u.id}>
-                          {u.full_name ?? u.email}
+                          {u.profile?.full_name ?? u.email}
                         </option>
                       ))}
                   </select>

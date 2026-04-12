@@ -93,7 +93,7 @@ export default function DashboardPage() {
   const [featuredProject, setFeaturedProject] = useState<Project | null>(null);
   const [featuredLoading, setFeaturedLoading] = useState(true);
 
-  const displayName = user?.full_name || user?.email || 'Builder';
+  const displayName = user?.profile?.full_name || user?.email || 'Builder';
 
   const scrollEvents = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
@@ -105,6 +105,7 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStatsLoading(true);
     Promise.all([
       api.getEvents({ limit: 100 }).catch(() => []),
@@ -122,6 +123,7 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEventsLoading(true);
     const today = new Date().toISOString().slice(0, 10);
     api
@@ -136,6 +138,7 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFeaturedLoading(true);
     Promise.all([
       api.getBlogposts({ limit: 1 }).then((posts) => (Array.isArray(posts) && posts.length > 0 ? posts[0] : null)),
@@ -323,7 +326,7 @@ export default function DashboardPage() {
       </section>
 
       {/* 4. Complete your profile CTA */}
-      {!user?.full_name && (
+      {!user?.profile?.full_name && (
         <section
           className={cls(
             'rounded-xl border border-alexandra/30 bg-alexandra/10 p-6 mb-8',

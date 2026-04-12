@@ -35,7 +35,7 @@ export default function  AuthLayout({children} : {children: React.ReactNode}) {
             <span className="text-[#EA4335]">{`}`}</span>
           </h2>
           <p className="text-sm md:text-base sm:max-w-10/12 mx-auto">
-            Access exclusive mentorship, submit your projects, and become part of UNN's core tech network. It starts here.
+            Access exclusive mentorship, submit your projects, and become part of UNN&apos;s core tech network. It starts here.
           </p>
         </motion.div>
         </AnimatePresence>
