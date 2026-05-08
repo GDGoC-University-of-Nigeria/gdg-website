@@ -85,11 +85,18 @@ export function stripOAuthTokenFromBrowserUrl(): void {
     }
   }
   if (changed) {
-    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+    window.history.replaceState(
+      null,
+      '',
+      `${url.pathname}${url.search}${url.hash}`
+    );
   }
 }
 
-export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function request<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
   const base = getApiUrl();
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const url = path.startsWith('http')
@@ -102,7 +109,7 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
   const headers: HeadersInit = {
     ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
     ...(_accessToken ? { Authorization: `Bearer ${_accessToken}` } : {}),
-    ...(options.headers as Record<string, string>),
+    ...(options.headers as Record<string, string>)
   };
   const res = await fetch(url, { ...options, headers, credentials: 'include' });
   const text = await res.text();
@@ -115,9 +122,11 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
   if (!res.ok) {
     const message =
       typeof data === 'object' && data !== null && 'detail' in data
-        ? (Array.isArray((data as { detail: unknown }).detail)
-            ? (data as { detail: Array<{ msg?: string }> }).detail.map((d) => d.msg ?? '').join(', ')
-            : String((data as { detail: string }).detail))
+        ? Array.isArray((data as { detail: unknown }).detail)
+          ? (data as { detail: Array<{ msg?: string }> }).detail
+              .map((d) => d.msg ?? '')
+              .join(', ')
+          : String((data as { detail: string }).detail)
         : res.statusText || `Request failed (${res.status})`;
     throw new ApiError(message, res.status, data);
   }
@@ -132,7 +141,9 @@ export const api = {
   },
 
   logout(): Promise<{ message: string }> {
-    return request<{ message: string }>('/auth/logout', { method: 'POST' });
+    return request<{ message: string }>('/auth/logout', {
+      method: 'POST'
+    });
   },
 
   getMe(): Promise<User> {
@@ -142,7 +153,7 @@ export const api = {
   updateMe(payload: UpdateUserPayload): Promise<User> {
     return request<User>('/users/me', {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
   },
 
@@ -151,27 +162,29 @@ export const api = {
   },
 
   deactivateUser(userId: string): Promise<{ message: string }> {
-    return request<{ message: string }>(`/admin/users/${userId}`, { method: 'DELETE' });
+    return request<{ message: string }>(`/admin/users/${userId}`, {
+      method: 'DELETE'
+    });
   },
 
   updateUserRole(
     userId: string,
     payload: { is_admin: boolean }
   ): Promise<User> {
-    return request<User>(`/api/v1/admin/users/${userId}/role`, {
+    return request<User>(`/admin/users/${userId}/role`, {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
   },
 
   reactivateUser(userId: string): Promise<User> {
-    return request<User>(`/api/v1/admin/users/${userId}/reactivate`, {
-      method: 'PATCH',
+    return request<User>(`/admin/users/${userId}/reactivate`, {
+      method: 'PATCH'
     });
   },
 
   getAdminStats(): Promise<AdminStats> {
-    return request<AdminStats>('/api/v1/admin/stats');
+    return request<AdminStats>('/admin/stats');
   },
 
   getCommunityMembers(params?: {
@@ -184,7 +197,7 @@ export const api = {
     if (params?.limit !== undefined) search.set('limit', String(params.limit));
     if (params?.q?.trim()) search.set('q', params.q.trim());
     const qs = search.toString();
-    return request<User[]>(`/api/v1/community/members${qs ? `?${qs}` : ''}`);
+    return request<User[]>(`/community/members${qs ? `?${qs}` : ''}`);
   },
 
   getEvents(params?: { from_date?: string; limit?: number }): Promise<Event[]> {
@@ -210,7 +223,7 @@ export const api = {
   }): Promise<Event> {
     return request<Event>('/events/', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
   },
 
@@ -229,7 +242,7 @@ export const api = {
   ): Promise<Event> {
     return request<Event>(`/events/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
   },
 
@@ -239,34 +252,46 @@ export const api = {
 
   addSpeaker(
     eventId: string,
-    payload: { name: string; bio: string; image_url?: string | null; topic?: string | null; niche: string }
+    payload: {
+      name: string;
+      bio: string;
+      image_url?: string | null;
+      topic?: string | null;
+      niche: string;
+    }
   ): Promise<Speaker> {
     return request<Speaker>(`/events/${eventId}/speakers`, {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
   },
 
   updateSpeaker(
     eventId: string,
     speakerId: string,
-    payload: { name?: string; bio?: string; image_url?: string | null; topic?: string | null; niche?: string }
+    payload: {
+      name?: string;
+      bio?: string;
+      image_url?: string | null;
+      topic?: string | null;
+      niche?: string;
+    }
   ): Promise<Speaker> {
     return request<Speaker>(`/events/${eventId}/speakers/${speakerId}`, {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
   },
 
   removeSpeaker(eventId: string, speakerId: string): Promise<void> {
     return request<void>(`/events/${eventId}/speakers/${speakerId}`, {
-      method: 'DELETE',
+      method: 'DELETE'
     });
   },
 
   registerForEvent(eventId: string): Promise<EventRegistration> {
     return request<EventRegistration>(`/events/${eventId}/register`, {
-      method: 'POST',
+      method: 'POST'
     });
   },
 
@@ -283,29 +308,34 @@ export const api = {
   },
 
   getEventRegistrationsAdmin(eventId: string): Promise<EventRegistration[]> {
-    return request<EventRegistration[]>(`/api/v1/admin/events/${eventId}/registrations`);
+    return request<EventRegistration[]>(
+      `/admin/events/${eventId}/registrations`
+    );
   },
 
   removeEventRegistrationAdmin(eventId: string, userId: string): Promise<void> {
-    return request<void>(`/api/v1/admin/events/${eventId}/registrations/${userId}`, {
-      method: 'DELETE',
+    return request<void>(`/admin/events/${eventId}/registrations/${userId}`, {
+      method: 'DELETE'
     });
   },
 
-  getProjects(params?: { status?: string; limit?: number }): Promise<Project[]> {
+  getProjects(params?: {
+    status?: string;
+    limit?: number;
+  }): Promise<Project[]> {
     const search = new URLSearchParams();
     if (params?.status) search.set('status', params.status);
     if (params?.limit) search.set('limit', String(params.limit));
     const qs = search.toString();
-    return request<Project[]>(`/api/v1/projects/${qs ? `?${qs}` : ''}`);
+    return request<Project[]>(`/projects/${qs ? `?${qs}` : ''}`);
   },
 
   getMyProjects(): Promise<Project[]> {
-    return request<Project[]>('/api/v1/users/me/projects');
+    return request<Project[]>('/users/me/projects');
   },
 
   getProject(id: string): Promise<Project> {
-    return request<Project>(`/api/v1/projects/${id}`);
+    return request<Project>(`/projects/${id}`);
   },
 
   createProject(payload: {
@@ -318,9 +348,9 @@ export const api = {
     github_repo?: string | null;
     demo_video_url?: string | null;
   }): Promise<Project> {
-    return request<Project>('/api/v1/projects/', {
+    return request<Project>('/projects/', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
   },
 
@@ -337,131 +367,147 @@ export const api = {
       status?: 'ongoing' | 'completed';
     }
   ): Promise<Project> {
-    return request<Project>(`/api/v1/projects/${id}`, {
+    return request<Project>(`/projects/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
   },
 
   deleteProject(id: string): Promise<void> {
-    return request<void>(`/api/v1/projects/${id}`, { method: 'DELETE' });
+    return request<void>(`/projects/${id}`, { method: 'DELETE' });
   },
 
   approveProjectAdmin(id: string): Promise<Project> {
-    return request<Project>(`/api/v1/admin/projects/${id}/approve`, { method: 'POST' });
+    return request<Project>(`/admin/projects/${id}/approve`, {
+      method: 'POST'
+    });
   },
 
-  rejectProjectAdmin(id: string, payload?: { reason?: string }): Promise<Project> {
-    return request<Project>(`/api/v1/admin/projects/${id}/reject`, {
+  rejectProjectAdmin(
+    id: string,
+    payload?: { reason?: string }
+  ): Promise<Project> {
+    return request<Project>(`/admin/projects/${id}/reject`, {
       method: 'POST',
-      body: JSON.stringify(payload ?? {}),
+      body: JSON.stringify(payload ?? {})
     });
   },
 
   featureProjectAdmin(id: string, is_featured: boolean): Promise<Project> {
-    return request<Project>(`/api/v1/admin/projects/${id}/feature`, {
+    return request<Project>(`/admin/projects/${id}/feature`, {
       method: 'PATCH',
-      body: JSON.stringify({ is_featured }),
+      body: JSON.stringify({ is_featured })
     });
   },
 
   async uploadImage(file: File): Promise<{ url: string }> {
     const formData = new FormData();
     formData.append('file', file);
-    return request<{ url: string }>('/api/v1/media/upload', {
+    return request<{ url: string }>('/media/upload', {
       method: 'POST',
-      body: formData,
+      body: formData
     });
   },
 
   getProjectContributors(projectId: string): Promise<ProjectContributor[]> {
-    return request<ProjectContributor[]>(`/api/v1/projects/${projectId}/contributors`);
+    return request<ProjectContributor[]>(`/projects/${projectId}/contributors`);
   },
 
   addContributor(
     projectId: string,
     payload: { user_id: string; role: string }
   ): Promise<ProjectContributor> {
-    return request<ProjectContributor>(`/api/v1/projects/${projectId}/contributors`, {
+    return request<ProjectContributor>(`/projects/${projectId}/contributors`, {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
   },
 
   removeContributor(projectId: string, userId: string): Promise<void> {
-    return request<void>(`/api/v1/projects/${projectId}/contributors/${userId}`, {
-      method: 'DELETE',
+    return request<void>(`/projects/${projectId}/contributors/${userId}`, {
+      method: 'DELETE'
     });
   },
 
-  applyToProject(projectId: string, payload: { role: string }): Promise<ProjectApplication> {
-    return request<ProjectApplication>(`/api/v1/projects/${projectId}/apply`, {
+  applyToProject(
+    projectId: string,
+    payload: { role: string }
+  ): Promise<ProjectApplication> {
+    return request<ProjectApplication>(`/projects/${projectId}/apply`, {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
   },
 
   withdrawApplication(applicationId: string): Promise<void> {
-    return request<void>(`/api/v1/projects/me/applications/${applicationId}`, {
-      method: 'DELETE',
+    return request<void>(`/projects/me/applications/${applicationId}`, {
+      method: 'DELETE'
     });
   },
 
   getProjectApplications(projectId: string): Promise<ProjectApplication[]> {
-    return request<ProjectApplication[]>(`/api/v1/projects/${projectId}/applications`);
+    return request<ProjectApplication[]>(`/projects/${projectId}/applications`);
   },
 
-  approveApplication(projectId: string, applicantId: string): Promise<ProjectApplication> {
+  approveApplication(
+    projectId: string,
+    applicantId: string
+  ): Promise<ProjectApplication> {
     return request<ProjectApplication>(
-      `/api/v1/projects/${projectId}/applications/${applicantId}/approve`,
+      `/projects/${projectId}/applications/${applicantId}/approve`,
       { method: 'PATCH' }
     );
   },
 
   rejectApplication(projectId: string, applicantId: string): Promise<void> {
-    return request<void>(
-      `/api/v1/projects/${projectId}/applications/${applicantId}`,
-      { method: 'DELETE' }
-    );
-  },
-
-  getMyApplications(): Promise<ProjectApplication[]> {
-    return request<ProjectApplication[]>('/api/v1/projects/me/applications');
-  },
-
-  getBlogNiches(): Promise<string[]> {
-    return request<string[]>('/api/v1/blog/niches');
-  },
-
-  getBlogposts(params?: { skip?: number; limit?: number }): Promise<BlogPost[]> {
-    const search = new URLSearchParams();
-    if (params?.skip !== undefined) search.set('skip', String(params.skip));
-    if (params?.limit !== undefined) search.set('limit', String(params.limit));
-    const qs = search.toString();
-    return request<BlogPost[]>(`/api/v1/blogposts/${qs ? `?${qs}` : ''}`);
-  },
-
-  getTeam(): Promise<TeamMemberResponse[]> {
-    return request<TeamMemberResponse[]>(`/api/v1/team`);
-  },
-
-  submitPublicForm(body: PublicFormPayload): Promise<{ message: string }> {
-    return request<{ message: string }>('/api/v1/public/forms/submit', {
-      method: 'POST',
-      body: JSON.stringify(body),
+    return request<void>(`/projects/${projectId}/applications/${applicantId}`, {
+      method: 'DELETE'
     });
   },
 
-  getMyBlogposts(params?: { skip?: number; limit?: number }): Promise<BlogPostAdmin[]> {
+  getMyApplications(): Promise<ProjectApplication[]> {
+    return request<ProjectApplication[]>('/projects/me/applications');
+  },
+
+  getBlogNiches(): Promise<string[]> {
+    return request<string[]>('/blog/niches');
+  },
+
+  getBlogposts(params?: {
+    skip?: number;
+    limit?: number;
+  }): Promise<BlogPost[]> {
     const search = new URLSearchParams();
     if (params?.skip !== undefined) search.set('skip', String(params.skip));
     if (params?.limit !== undefined) search.set('limit', String(params.limit));
     const qs = search.toString();
-    return request<BlogPostAdmin[]>(`/api/v1/blogposts/me${qs ? `?${qs}` : ''}`);
+    return request<BlogPost[]>(`/blogposts/${qs ? `?${qs}` : ''}`);
+  },
+
+  getTeam(): Promise<TeamMemberResponse[]> {
+    return request<TeamMemberResponse[]>(`/team`);
+  },
+
+  submitPublicForm(body: PublicFormPayload): Promise<{ message: string }> {
+    return request<{ message: string }>('/public/forms/submit', {
+      method: 'POST',
+      body: JSON.stringify(body)
+    });
+  },
+
+  getMyBlogposts(params?: {
+    skip?: number;
+    limit?: number;
+  }): Promise<BlogPostAdmin[]> {
+    const search = new URLSearchParams();
+    if (params?.skip !== undefined) search.set('skip', String(params.skip));
+    if (params?.limit !== undefined) search.set('limit', String(params.limit));
+    const qs = search.toString();
+    return request<BlogPostAdmin[]>(`/blogposts/me${qs ? `?${qs}` : ''}`);
   },
 
   getBlogpost(id: string): Promise<BlogPost> {
-    return request<BlogPost>(`/api/v1/blogposts/${id}`);
+    return request<BlogPost>(`/blogposts/${id}`);
   },
 
   submitBlogpost(payload: {
@@ -470,9 +516,9 @@ export const api = {
     image_url?: string | null;
     niche?: string | null;
   }): Promise<BlogPost> {
-    return request<BlogPost>('/api/v1/blogposts/', {
+    return request<BlogPost>('/blogposts/', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
   },
 
@@ -485,40 +531,42 @@ export const api = {
       niche?: string | null;
     }
   ): Promise<BlogPost> {
-    return request<BlogPost>(`/api/v1/blogposts/${id}`, {
+    return request<BlogPost>(`/blogposts/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
   },
 
   deleteBlogpost(id: string): Promise<void> {
-    return request<void>(`/api/v1/blogposts/${id}`, { method: 'DELETE' });
+    return request<void>(`/blogposts/${id}`, { method: 'DELETE' });
   },
 
   likeBlogpost(postId: string): Promise<{ liked?: boolean }> {
-    return request<{ liked?: boolean }>(`/api/v1/blogposts/${postId}/like`, { method: 'POST' });
+    return request<{ liked?: boolean }>(`/blogposts/${postId}/like`, {
+      method: 'POST'
+    });
   },
 
   getComments(postId: string): Promise<Comment[]> {
-    return request<Comment[]>(`/api/v1/blogposts/${postId}/comments`);
+    return request<Comment[]>(`/blogposts/${postId}/comments`);
   },
 
   postComment(postId: string, content: string): Promise<Comment> {
-    return request<Comment>(`/api/v1/blogposts/${postId}/comments`, {
+    return request<Comment>(`/blogposts/${postId}/comments`, {
       method: 'POST',
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content })
     });
   },
 
   updateComment(commentId: string, content: string): Promise<Comment> {
-    return request<Comment>(`/api/v1/comments/${commentId}`, {
+    return request<Comment>(`/comments/${commentId}`, {
       method: 'PATCH',
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content })
     });
   },
 
   deleteComment(commentId: string): Promise<void> {
-    return request<void>(`/api/v1/comments/${commentId}`, { method: 'DELETE' });
+    return request<void>(`/comments/${commentId}`, { method: 'DELETE' });
   },
 
   getAdminBlogposts(params?: {
@@ -529,30 +577,36 @@ export const api = {
     niche?: string;
   }): Promise<BlogPostAdmin[]> {
     const search = new URLSearchParams();
-    if (params?.status && params.status !== 'all') search.set('status', params.status);
+    if (params?.status && params.status !== 'all')
+      search.set('status', params.status);
     if (params?.skip !== undefined) search.set('skip', String(params.skip));
     if (params?.limit !== undefined) search.set('limit', String(params.limit));
     if (params?.q?.trim()) search.set('q', params.q.trim());
     if (params?.niche?.trim()) search.set('niche', params.niche.trim());
     const qs = search.toString();
-    return request<BlogPostAdmin[]>(`/api/v1/admin/blogposts/${qs ? `?${qs}` : ''}`);
+    return request<BlogPostAdmin[]>(`/admin/blogposts/${qs ? `?${qs}` : ''}`);
   },
 
   approveBlogpost(postId: string): Promise<BlogPostAdmin> {
-    return request<BlogPostAdmin>(`/api/v1/admin/blogposts/${postId}/approve`, {
-      method: 'PATCH',
+    return request<BlogPostAdmin>(`/admin/blogposts/${postId}/approve`, {
+      method: 'PATCH'
     });
   },
 
-  rejectBlogpost(postId: string, payload: { rejection_reason?: string }): Promise<BlogPostAdmin> {
-    return request<BlogPostAdmin>(`/api/v1/admin/blogposts/${postId}/reject`, {
+  rejectBlogpost(
+    postId: string,
+    payload: { rejection_reason?: string }
+  ): Promise<BlogPostAdmin> {
+    return request<BlogPostAdmin>(`/admin/blogposts/${postId}/reject`, {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
   },
 
   deleteAdminBlogpost(postId: string): Promise<void> {
-    return request<void>(`/api/v1/admin/blogposts/${postId}`, { method: 'DELETE' });
+    return request<void>(`/admin/blogposts/${postId}`, {
+      method: 'DELETE'
+    });
   },
 
   updateAdminBlogpost(
@@ -564,20 +618,22 @@ export const api = {
       image_url?: string | null;
     }
   ): Promise<BlogPostAdmin> {
-    return request<BlogPostAdmin>(`/api/v1/admin/blogposts/${postId}`, {
+    return request<BlogPostAdmin>(`/admin/blogposts/${postId}`, {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
   },
 
   deleteAdminComment(commentId: string): Promise<void> {
-    return request<void>(`/api/v1/admin/comments/${commentId}`, { method: 'DELETE' });
+    return request<void>(`/admin/comments/${commentId}`, {
+      method: 'DELETE'
+    });
   },
 
   hideAdminComment(commentId: string, hidden: boolean): Promise<Comment> {
-    return request<Comment>(`/api/v1/admin/comments/${commentId}/hide`, {
+    return request<Comment>(`/admin/comments/${commentId}/hide`, {
       method: 'PATCH',
-      body: JSON.stringify({ hidden }),
+      body: JSON.stringify({ hidden })
     });
   }
 };
