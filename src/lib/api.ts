@@ -76,6 +76,46 @@ export function getAccessToken(): string | null {
   return _accessToken;
 }
 
+/** OAuth redirect may expose a JWT via query (?access_token= / ?token=) or fragment. */
+export function readOAuthBearerFromWindow(): string | null {
+  if (typeof window === 'undefined') return null;
+  const qs = new URLSearchParams(window.location.search);
+  const fromQuery =
+    qs.get('access_token')?.trim() || qs.get('token')?.trim() || null;
+  if (fromQuery) return fromQuery;
+
+  const rawHash = window.location.hash.replace(/^#/, '');
+  if (!rawHash) return null;
+  const hp = new URLSearchParams(rawHash);
+  return hp.get('access_token')?.trim() || hp.get('token')?.trim() || null;
+}
+
+/** Remove token params from the address bar without a full navigation (avoids leaking via referrers). */
+export function stripOAuthTokenFromBrowserUrl(): void {
+  if (typeof window === 'undefined') return;
+  const url = new URL(window.location.href);
+  let changed = false;
+  for (const key of ['access_token', 'token']) {
+    if (url.searchParams.has(key)) {
+      url.searchParams.delete(key);
+      changed = true;
+    }
+  }
+  if (url.hash) {
+    const hp = new URLSearchParams(url.hash.replace(/^#/, ''));
+    if (hp.has('access_token') || hp.has('token')) {
+      hp.delete('access_token');
+      hp.delete('token');
+      const rest = hp.toString();
+      url.hash = rest ? `#${rest}` : '';
+      changed = true;
+    }
+  }
+  if (changed) {
+    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  }
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const base = getApiUrl();
   const url = path.startsWith('http') ? path : `${base}${path.startsWith('/') ? '' : '/'}${path}`;

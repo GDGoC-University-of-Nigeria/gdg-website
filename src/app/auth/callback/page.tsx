@@ -1,18 +1,30 @@
 'use client';
 
-import { useEffect, Suspense } from 'react';
+import { useEffect, useLayoutEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { api } from '@/lib/api';
+import {
+  api,
+  readOAuthBearerFromWindow,
+  setAccessToken,
+  stripOAuthTokenFromBrowserUrl
+} from '@/lib/api';
 
 function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setUser } = useAuth();
 
+  // Layout: set Bearer before AuthProvider hydration useEffect fires getMe (avoids 401 races).
+  useLayoutEffect(() => {
+    const bearer = readOAuthBearerFromWindow();
+    if (bearer) {
+      setAccessToken(bearer);
+      stripOAuthTokenFromBrowserUrl();
+    }
+  }, []);
+
   useEffect(() => {
-    // The access_token is now in an HttpOnly cookie — no need to read it from the URL.
-    // The browser sends it automatically on every request via credentials: 'include'.
     const profile_complete = searchParams.get('profile_complete') === 'true';
 
     api.getMe()

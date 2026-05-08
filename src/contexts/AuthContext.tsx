@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { api, type User } from '@/lib/api';
+import { api, setAccessToken, type User } from '@/lib/api';
 
 type AuthState = {
   user: User | null;
@@ -26,6 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await api.logout();
     } finally {
+      setAccessToken(null);
       setUser(null);
     }
   }, []);
