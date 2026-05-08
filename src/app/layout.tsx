@@ -37,7 +37,21 @@ const productSans = localFont({
 export const metadata: Metadata = {
   title: 'GDG UNN – Empowering Developers & Innovators at UNN Campus',
   description: `Building a vibrant community of developers, designers, \
-    and tech enthusiasts at the University of Nigeria, Nsukka.`
+    and tech enthusiasts at the University of Nigeria, Nsukka.`,
+  openGraph: {
+    title: 'GDG UNN',
+    description:
+      'Join GDG UNN to learn in public, build projects, and grow with fellow developers.',
+    type: 'website',
+    images: ['/images/logo-banner.png']
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'GDG UNN',
+    description:
+      'Join GDG UNN to learn in public, build projects, and grow with fellow developers.',
+    images: ['/images/logo-banner.png']
+  }
 };
 
 export default async function RootLayout({ children }: LayoutProps) {

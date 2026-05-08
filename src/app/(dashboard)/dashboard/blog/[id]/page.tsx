@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api, ApiError } from '@/lib/api';
 import type { BlogPost, Comment } from '@/lib/api';
 import { cls } from '@/utils';
+import { sanitizeBlogHtml } from '@/utils/sanitizeHtml';
 
 export default function BlogPostDetailPage() {
   const params = useParams();
@@ -135,7 +136,7 @@ export default function BlogPostDetailPage() {
         </h1>
         <div className={cls('prose prose-sm max-w-none text-blackout')}>
           {post.content_format === 'html' ? (
-            <div dangerouslySetInnerHTML={{ __html: post.content }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeBlogHtml(post.content) }} />
           ) : (
             <ReactMarkdown>{post.content}</ReactMarkdown>
           )}

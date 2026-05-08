@@ -1,16 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-
 import { ReactSVG } from 'react-svg';
-
-import { Drawer } from '@mui/material';
-
-import { links } from '@/constants';
-
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
+import { links } from '@/constants';
 import { useAuth } from '@/contexts/AuthContext';
 
 type LinkItem = { target: string; label: string };
@@ -29,123 +25,134 @@ function getHeaderLinks(isLoggedIn: boolean, isAdmin: boolean): LinkItem[][] {
 
 export const AppHeader = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const router = useRouter();
   const { user, logout, isHydrated } = useAuth();
   const headerLinks = getHeaderLinks(!!user, user?.is_admin ?? false);
 
   const handleNavClick = async (item: LinkItem) => {
     if (item.label === 'Log out') {
-      await logout();
-      window.location.href = '/';
+      try {
+        await logout();
+      } finally {
+        router.replace('/');
+      }
     }
     setIsDrawerOpen(false);
   };
 
   return (
     <>
-      <Drawer
-        open={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        slotProps={{
-          paper: {
-            sx: {
-              borderBottomRightRadius: '32px',
-              borderTopRightRadius: '32px',
-              backgroundColor: 'white',
-              scrollbarWidth: 'none'
-            }
-          }
-        }}
-      >
-        <aside className="relative flex h-full w-84 max-w-84 flex-col rounded-r-4xl bg-white pb-6 font-medium">
-          <header className="z-20 flex items-center justify-end px-4 py-3.5">
-            <Link
-              className="w-3/4 origin-left mr-auto md:w-1/3 md:scale-100"
-              href={""}
-              onClick={() => setIsDrawerOpen(false)}
-              role="button"
-              aria-label="Close menu"
-            >
-              {' '}
-              <img src={'/images/logo-banner.png'} />
-            </Link>
-            {/* ReactSVG Close Button added here */}
-            <button
-              type="button"
-              onClick={() => setIsDrawerOpen(false)}
-              className="text-solid-matte-gray hover:text-blackout -m-2 ml-4 p-2"
-              aria-label="Close menu"
-            >
-              <ReactSVG src="/graphics/close.svg" />
-            </button>
-          </header>
-          <nav className="z-20 mt-6 flex w-full flex-col gap-10 px-8">
-            {isHydrated &&
-              headerLinks.flat().map(({ target, label }) =>
-                label === 'Log out' ? (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => handleNavClick({ target, label })}
-                    className="text-solid-matte-gray text-left text-xl hover:underline"
-                  >
-                    {label}
-                  </button>
-                ) : (
-                  <Link
-                    onClick={() => setIsDrawerOpen(false)}
-                    className="text-solid-matte-gray text-xl"
-                    href={target}
-                    key={label}
-                  >
-                    {label}
-                  </Link>
-                )
-              )}
-          </nav>
-        </aside>
-      </Drawer>
-      <header className="text-solid-matte-gray sticky top-0 right-0 left-0 z-20 flex h-14 w-full max-w-94 items-center justify-between bg-white pr-6.5 pl-5 md:h-25 md:max-w-360 md:px-30">
-        <Link
-          className="w-3/4 origin-left md:ml-0 md:w-1/3 md:scale-100"
-          href="/"
-        >
-          <img src={'/images/logo-banner.png'} />
-        </Link>
-        <nav className="hidden items-center md:flex">
-          {isHydrated &&
-            headerLinks.map((group, index) => (
-              <article className="flex items-center" key={index}>
-                <ul className="flex items-center gap-8.5">
-                  {group.map(({ target, label }) => (
-                    <li key={label}>
-                      {label === 'Log out' ? (
-                        <button
-                          type="button"
-                          onClick={() => handleNavClick({ target, label })}
-                          className="hover:underline"
-                        >
-                          {label}
-                        </button>
-                      ) : (
-                        <Link className="hover:underline" href={target}>
-                          {label}
-                        </Link>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-                {index !== headerLinks.length - 1 && (
-                  <ReactSVG src="/graphics/divide-x.svg" className="mx-8.5" />
+      {isDrawerOpen && (
+        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            aria-label="Close menu overlay"
+            className="absolute inset-0 bg-black/35"
+            onClick={() => setIsDrawerOpen(false)}
+          />
+          <aside className="relative z-10 flex h-full w-[min(320px,85vw)] flex-col bg-white p-6 shadow-xl">
+            <div className="mb-8 flex items-center justify-between">
+              <Link href="/" onClick={() => setIsDrawerOpen(false)}>
+                <Image
+                  src="/images/logo-banner.png"
+                  alt="GDG UNN Logo"
+                  width={220}
+                  height={52}
+                  className="h-11 w-auto"
+                />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setIsDrawerOpen(false)}
+                className="-m-2 p-2 text-solid-matte-gray hover:text-blackout"
+                aria-label="Close menu"
+              >
+                <ReactSVG src="/graphics/close.svg" />
+              </button>
+            </div>
+            <nav className="flex flex-col gap-3">
+              {isHydrated &&
+                headerLinks.flat().map(({ target, label }) =>
+                  label === 'Log out' ? (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => handleNavClick({ target, label })}
+                      className="text-left text-lg text-solid-matte-gray transition-colors hover:text-red-600"
+                    >
+                      {label}
+                    </button>
+                  ) : (
+                    <Link
+                      key={label}
+                      href={target}
+                      onClick={() => setIsDrawerOpen(false)}
+                      className="text-lg text-solid-matte-gray transition-colors hover:text-blackout"
+                    >
+                      {label}
+                    </Link>
+                  )
                 )}
-              </article>
-            ))}
-        </nav>
-        <ReactSVG
-          src="/graphics/menu.svg"
-          onClick={() => setIsDrawerOpen(true)}
-          className="md:hidden"
-          role="button"
-        />
+            </nav>
+          </aside>
+        </div>
+      )}
+
+      <header className="sticky top-0 z-20 w-full border-b border-[#DADCE0] bg-white shadow-sm">
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-5 md:h-20 md:px-8">
+          <Link className="flex min-w-0 shrink-0 items-center" href="/">
+            <Image
+              src="/images/logo-banner.png"
+              alt="GDG UNN"
+              width={220}
+              height={52}
+              className="h-10 w-auto max-w-[180px] sm:max-w-[220px]"
+              priority
+            />
+          </Link>
+
+          <nav className="hidden items-center md:flex">
+            {isHydrated &&
+              headerLinks.map((group, index) => (
+                <article className="flex items-center" key={index}>
+                  <ul className="flex items-center gap-8">
+                    {group.map(({ target, label }) => (
+                      <li key={label}>
+                        {label === 'Log out' ? (
+                          <button
+                            type="button"
+                            onClick={() => handleNavClick({ target, label })}
+                            className="text-sm text-solid-matte-gray transition-colors hover:text-red-600"
+                          >
+                            {label}
+                          </button>
+                        ) : (
+                          <Link
+                            className="text-sm text-solid-matte-gray transition-colors hover:text-blackout"
+                            href={target}
+                          >
+                            {label}
+                          </Link>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  {index !== headerLinks.length - 1 && (
+                    <ReactSVG src="/graphics/divide-x.svg" className="mx-8" />
+                  )}
+                </article>
+              ))}
+          </nav>
+
+          <button
+            type="button"
+            onClick={() => setIsDrawerOpen(true)}
+            className="md:hidden"
+            aria-label="Open menu"
+          >
+            <ReactSVG src="/graphics/menu.svg" />
+          </button>
+        </div>
       </header>
     </>
   );

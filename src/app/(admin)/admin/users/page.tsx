@@ -1,6 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+
+import {
+  Avatar,
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  PageHeader,
+  SearchInput,
+  Skeleton
+} from '@/components/ui';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, ApiError, type User } from '@/lib/api';
 import { cls } from '@/utils';
@@ -12,6 +23,8 @@ export default function AdminUsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [actionUserId, setActionUserId] = useState<string | null>(null);
+  const [confirmDeactivateId, setConfirmDeactivateId] = useState<string | null>(null);
+  const [confirmReactivateId, setConfirmReactivateId] = useState<string | null>(null);
 
   const loadUsers = async () => {
     if (!user) return;
@@ -44,14 +57,15 @@ export default function AdminUsersPage() {
 
   const handleDeactivate = async (id: string) => {
     if (!user) return;
-    if (
-      !confirm('Deactivate this user? They will no longer be able to log in.')
-    )
+    if (id === user.id) {
+      setError('You cannot deactivate your own account.');
       return;
+    }
     setActionUserId(id);
     setError(null);
     try {
       await api.deactivateUser(id);
+      toast.success('User deactivated');
       await loadUsers();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Failed to deactivate user');
@@ -60,11 +74,43 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleReactivate = async (id: string) => {
+    if (!user) return;
+    setActionUserId(id);
+    setError(null);
+    try {
+      await api.reactivateUser(id);
+      toast.success('User reactivated');
+      await loadUsers();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Failed to reactivate user');
+    } finally {
+      setActionUserId(null);
+    }
+  };
+
+  const handleRoleToggle = async (target: User) => {
+    if (!user) return;
+    if (target.id === user.id) {
+      setError('You cannot change your own admin role.');
+      return;
+    }
+    setActionUserId(target.id);
+    setError(null);
+    try {
+      await api.updateUserRole(target.id, { is_admin: !target.is_admin });
+      toast.success(target.is_admin ? 'Admin role removed' : 'User promoted to admin');
+      await loadUsers();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Failed to update role');
+    } finally {
+      setActionUserId(null);
+    }
+  };
+
   return (
     <div className={cls('space-y-6')}>
-      <h1 className={cls('text-blackout text-2xl font-semibold')}>
-        Admin – User management
-      </h1>
+      <PageHeader title="User management" description="Manage access, roles, and account states." />
 
       {error && (
         <div
@@ -76,34 +122,25 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      {/* Filter - live as user types */}
-      <section
-        className={cls('rounded-xl border border-[#DADCE0] bg-white p-4')}
-      >
-        <h2 className={cls('text-blackout mb-2 text-lg font-semibold')}>
-          Filter users
-        </h2>
-        <input
-          type="text"
+      <section className={cls('rounded-xl border border-[var(--color-border)] bg-white p-4')}>
+        <SearchInput
+          id="admin-user-search"
+          label="Filter users"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={setSearchQuery}
           placeholder="Filter by name or email..."
-          className={cls(
-            'text-blackout w-full rounded-lg border border-[#DADCE0] px-3 py-2',
-            'focus:ring-alexandra focus:ring-2 focus:outline-none'
-          )}
         />
       </section>
 
       {/* User list */}
       <section
         className={cls(
-          'overflow-hidden rounded-xl border border-[#DADCE0] bg-white'
+          'overflow-hidden rounded-xl border border-[var(--color-border)] bg-white'
         )}
       >
         <h2
           className={cls(
-            'text-blackout border-b border-[#DADCE0] p-4 text-lg font-semibold'
+            'text-blackout border-b border-[var(--color-border)] p-4 text-lg font-semibold'
           )}
         >
           {searchQuery.trim()
@@ -111,14 +148,19 @@ export default function AdminUsersPage() {
             : `All users (${displayList.length})`}
         </h2>
         {loading ? (
-          <div className={cls('text-solid-matte-gray p-8 text-center')}>
-            Loading...
+          <div className="space-y-2 p-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
           </div>
         ) : (
           <div className={cls('overflow-x-auto')}>
             <table className={cls('w-full text-left')}>
               <thead>
-                <tr className={cls('bg-tech-white border-b border-[#DADCE0]')}>
+                <tr className={cls('bg-tech-white border-b border-[var(--color-border)]')}>
+                  <th className={cls('text-blackout px-4 py-3 font-medium')}>
+                    Avatar
+                  </th>
                   <th className={cls('text-blackout px-4 py-3 font-medium')}>
                     Name
                   </th>
@@ -141,9 +183,16 @@ export default function AdminUsersPage() {
                   <tr
                     key={u.id}
                     className={cls(
-                      'hover:bg-tech-white/50 border-b border-[#DADCE0]'
+                      'hover:bg-tech-white/50 border-b border-[var(--color-border)]'
                     )}
                   >
+                    <td className="px-4 py-3">
+                      <Avatar
+                        src={u.profile?.avatar_url}
+                        alt={u.profile?.full_name ?? u.email}
+                        size={32}
+                      />
+                    </td>
                     <td className={cls('text-blackout px-4 py-3')}>
                       {u.profile?.full_name ?? '—'}
                     </td>
@@ -151,28 +200,37 @@ export default function AdminUsersPage() {
                       {u.email}
                     </td>
                     <td className={cls('px-4 py-3')}>
-                      {u.is_admin ? 'Yes' : 'No'}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void handleRoleToggle(u)}
+                        disabled={actionUserId === u.id}
+                      >
+                        {u.is_admin ? 'Demote' : 'Promote'}
+                      </Button>
                     </td>
                     <td className={cls('px-4 py-3 text-sm')}>
                       {u.is_active ? 'Active' : 'Deactivated'}
                     </td>
                     <td className={cls('px-4 py-3')}>
                       {u.is_active ? (
-                        <button
-                          type="button"
-                          onClick={() => handleDeactivate(u.id)}
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => setConfirmDeactivateId(u.id)}
                           disabled={actionUserId === u.id}
-                          className={cls(
-                            'rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50',
-                            'disabled:opacity-60'
-                          )}
                         >
                           {actionUserId === u.id ? '...' : 'Deactivate'}
-                        </button>
+                        </Button>
                       ) : (
-                        <span className="text-solid-matte-gray text-xs">
-                          No actions
-                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setConfirmReactivateId(u.id)}
+                          disabled={actionUserId === u.id}
+                        >
+                          Reactivate
+                        </Button>
                       )}
                     </td>
                   </tr>
@@ -182,11 +240,38 @@ export default function AdminUsersPage() {
           </div>
         )}
         {!loading && displayList.length === 0 && (
-          <p className={cls('text-solid-matte-gray p-6 text-center')}>
-            No users found.
-          </p>
+          <div className="p-4">
+            <EmptyState title="No users found" description="Try another search keyword." />
+          </div>
         )}
       </section>
+      <ConfirmDialog
+        open={Boolean(confirmDeactivateId)}
+        onOpenChange={(open) => !open && setConfirmDeactivateId(null)}
+        title="Deactivate user?"
+        description="This user will no longer be able to sign in."
+        confirmLabel="Deactivate"
+        variant="danger"
+        loading={actionUserId !== null}
+        onConfirm={async () => {
+          if (!confirmDeactivateId) return;
+          await handleDeactivate(confirmDeactivateId);
+          setConfirmDeactivateId(null);
+        }}
+      />
+      <ConfirmDialog
+        open={Boolean(confirmReactivateId)}
+        onOpenChange={(open) => !open && setConfirmReactivateId(null)}
+        title="Reactivate user?"
+        description="This user will regain platform access."
+        confirmLabel="Reactivate"
+        loading={actionUserId !== null}
+        onConfirm={async () => {
+          if (!confirmReactivateId) return;
+          await handleReactivate(confirmReactivateId);
+          setConfirmReactivateId(null);
+        }}
+      />
     </div>
   );
 }

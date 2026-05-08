@@ -1,16 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
+import { toast } from 'sonner';
+
+import { Button, ConfirmDialog, StatusBadge } from '@/components/ui';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, ApiError } from '@/lib/api';
 import type { BlogPost, Comment } from '@/lib/api';
 import { cls } from '@/utils';
+import { sanitizeBlogHtml } from '@/utils/sanitizeHtml';
 
 export default function AdminBlogPostDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const { user } = useAuth();
   const id = params.id as string;
   const [post, setPost] = useState<BlogPost | null>(null);
@@ -20,6 +25,7 @@ export default function AdminBlogPostDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const loadPost = () => {
     setLoading(true);
@@ -44,6 +50,7 @@ export default function AdminBlogPostDetailPage() {
     setActionLoading(true);
     try {
       await api.approveBlogpost(id);
+      toast.success('Post approved');
       loadPost();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Failed to approve');
@@ -59,10 +66,24 @@ export default function AdminBlogPostDetailPage() {
       await api.rejectBlogpost(id, { rejection_reason: rejectionReason.trim() || undefined });
       setShowRejectModal(false);
       setRejectionReason('');
+      toast.success('Post rejected');
       loadPost();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Failed to reject');
     } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!user || actionLoading) return;
+    setActionLoading(true);
+    try {
+      await api.deleteAdminBlogpost(id);
+      toast.success('Post removed from platform');
+      router.replace('/admin/blog');
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Failed to remove post');
       setActionLoading(false);
     }
   };
@@ -119,23 +140,14 @@ export default function AdminBlogPostDetailPage() {
               {post.niche}
             </span>
           )}
-          <span
-            className={cls(
-              'text-xs px-2 py-0.5 rounded-sm uppercase',
-              post.status === 'approved' && 'bg-green-100 text-green-800',
-              post.status === 'pending' && 'bg-amber-100 text-amber-800',
-              post.status === 'rejected' && 'bg-red-100 text-red-800'
-            )}
-          >
-            {post.status}
-          </span>
+          <StatusBadge status={post.status} />
         </div>
         <h1 className={cls('text-2xl md:text-3xl font-semibold text-blackout mb-4')}>
           {post.title}
         </h1>
         <div className={cls('prose prose-sm max-w-none text-blackout')}>
           {post.content_format === 'html' ? (
-            <div dangerouslySetInnerHTML={{ __html: post.content }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeBlogHtml(post.content) }} />
           ) : (
             <ReactMarkdown>{post.content}</ReactMarkdown>
           )}
@@ -144,30 +156,39 @@ export default function AdminBlogPostDetailPage() {
           <span className={cls('text-sm text-solid-matte-gray')}>
             {post.likes_count ?? 0} likes · {post.comments_count ?? comments.length} comments
           </span>
-          {post.status === 'pending' && user && (
-            <div className={cls('flex gap-2 ml-auto')}>
-              <button
+          {user && (
+            <div className={cls('ml-auto flex gap-2')}>
+              {post.status === 'pending' && (
+                <>
+                  <Button
+                    type="button"
+                    onClick={handleApprove}
+                    disabled={actionLoading}
+                    variant="outline"
+                    size="md"
+                  >
+                    {actionLoading ? '...' : 'Approve'}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setShowRejectModal(true)}
+                    disabled={actionLoading}
+                    variant="danger"
+                    size="md"
+                  >
+                    Reject
+                  </Button>
+                </>
+              )}
+              <Button
                 type="button"
-                onClick={handleApprove}
+                onClick={() => setShowDeleteConfirm(true)}
                 disabled={actionLoading}
-                className={cls(
-                  'px-4 py-2 text-sm font-medium rounded-lg',
-                  'bg-green-600 text-white hover:bg-green-700 disabled:opacity-60'
-                )}
+                variant="danger"
+                size="md"
               >
-                {actionLoading ? '...' : 'Approve'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowRejectModal(true)}
-                disabled={actionLoading}
-                className={cls(
-                  'px-4 py-2 text-sm font-medium rounded-lg',
-                  'bg-red-600 text-white hover:bg-red-700 disabled:opacity-60'
-                )}
-              >
-                Reject
-              </button>
+                Delete post
+              </Button>
             </div>
           )}
         </div>
@@ -258,6 +279,16 @@ export default function AdminBlogPostDetailPage() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete this post?"
+        description="This action permanently removes the post from the platform."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={actionLoading}
+        onConfirm={() => void handleDelete()}
+      />
     </div>
   );
 }

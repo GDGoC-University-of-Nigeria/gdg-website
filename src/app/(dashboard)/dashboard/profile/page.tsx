@@ -3,9 +3,15 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, ApiError } from '@/lib/api';
-import type { BlogPostAdmin, Project, EventRegistration, Event } from '@/lib/api';
+import type {
+  BlogPostAdmin,
+  Project,
+  EventRegistration,
+  Event
+} from '@/lib/api';
 import { cls } from '@/utils';
 
 type ProjectWithContributors = Project & {
@@ -26,9 +32,12 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [avatarUploadLoading, setAvatarUploadLoading] = useState(false);
   const [myPosts, setMyPosts] = useState<BlogPostAdmin[]>([]);
   const [myProjects, setMyProjects] = useState<ProjectWithContributors[]>([]);
-  const [myRegistrations, setMyRegistrations] = useState<RegistrationWithEvent[]>([]);
+  const [myRegistrations, setMyRegistrations] = useState<
+    RegistrationWithEvent[]
+  >([]);
   const [registeredEvents, setRegisteredEvents] = useState<Event[]>([]);
   const [activityLoading, setActivityLoading] = useState(true);
 
@@ -51,11 +60,13 @@ export default function ProfilePage() {
         return arr.filter((p) => {
           const proj = p as ProjectWithContributors;
           if (proj.creator_id === user?.id) return true;
-          return proj.contributors?.some((c) => c.user_id === user?.id) ?? false;
+          return (
+            proj.contributors?.some((c) => c.user_id === user?.id) ?? false
+          );
         });
       }),
       api.getMyRegistrations().catch(() => []),
-      api.getEvents({ limit: 200 }).catch(() => []),
+      api.getEvents({ limit: 200 }).catch(() => [])
     ])
       .then(([posts, projects, regs, events]) => {
         setMyPosts(Array.isArray(posts) ? posts : []);
@@ -63,8 +74,12 @@ export default function ProfilePage() {
         const regList = Array.isArray(regs) ? regs : [];
         setMyRegistrations(regList);
         const eventList = Array.isArray(events) ? events : [];
-        const regEventIds = new Set(regList.map((r: RegistrationWithEvent) => r.event_id));
-        setRegisteredEvents(eventList.filter((ev: Event) => regEventIds.has(ev.id)));
+        const regEventIds = new Set(
+          regList.map((r: RegistrationWithEvent) => r.event_id)
+        );
+        setRegisteredEvents(
+          eventList.filter((ev: Event) => regEventIds.has(ev.id))
+        );
       })
       .catch(() => {})
       .finally(() => setActivityLoading(false));
@@ -80,11 +95,11 @@ export default function ProfilePage() {
       const updated = await api.updateMe({
         full_name: fullName || null,
         phone: phone || null,
-        bio: bio || null,
+        bio: bio || null
       });
       setUser(updated);
       setSuccess(true);
-      setIsEditing(false);
+      toast.success('Profile updated');
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Update failed');
     } finally {
@@ -92,13 +107,31 @@ export default function ProfilePage() {
     }
   };
 
-  const avatarUrl = user?.id
-    ? `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(user.id)}`
-    : null;
+  const avatarUrl =
+    user?.profile?.avatar_url ||
+    (user?.id
+      ? `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(user.id)}`
+      : null);
+
+  const handleAvatarUpload = async (file?: File | null) => {
+    if (!user || !file) return;
+    setAvatarUploadLoading(true);
+    setError(null);
+    try {
+      const { url } = await api.uploadImage(file);
+      const updated = await api.updateMe({ avatar_url: url });
+      setUser(updated);
+      toast.success('Avatar updated');
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Failed to upload avatar');
+    } finally {
+      setAvatarUploadLoading(false);
+    }
+  };
 
   return (
     <div className={cls('space-y-8')}>
-      <h1 className={cls('text-2xl md:text-3xl font-medium text-blackout')}>
+      <h1 className={cls('text-blackout text-2xl font-medium md:text-3xl')}>
         My profile
       </h1>
 
@@ -109,10 +142,14 @@ export default function ProfilePage() {
           'text-blackout'
         )}
       >
-        <div className={cls('flex flex-col sm:flex-row gap-6')}>
+        <div className={cls('flex flex-col gap-6 sm:flex-row')}>
           {avatarUrl && (
             <div className={cls('shrink-0')}>
-              <div className={cls('relative w-24 h-24 rounded-full overflow-hidden bg-[#F8F8F8] border-2 border-[#E0E0E0]')}>
+              <div
+                className={cls(
+                  'relative h-24 w-24 overflow-hidden rounded-full border-2 border-[#E0E0E0] bg-[#F8F8F8]'
+                )}
+              >
                 <Image
                   src={avatarUrl}
                   alt="Profile avatar"
@@ -121,13 +158,37 @@ export default function ProfilePage() {
                   unoptimized
                 />
               </div>
+              {isEditing && (
+                <label
+                  htmlFor="avatar-upload"
+                  className={cls(
+                    'mt-3 inline-flex cursor-pointer rounded-lg border border-(--color-border) px-3 py-1.5 text-xs font-medium',
+                    'text-blackout hover:border-alexandra hover:text-alexandra transition-colors'
+                  )}
+                >
+                  {avatarUploadLoading ? 'Uploading...' : 'Change avatar'}
+                </label>
+              )}
+              {isEditing && (
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => void handleAvatarUpload(e.target.files?.[0])}
+                />
+              )}
             </div>
           )}
-          <div className={cls('flex-1 min-w-0')}>
+          <div className={cls('min-w-0 flex-1')}>
             {isEditing ? (
               <form onSubmit={handleSubmit} className={cls('space-y-4')}>
                 <div>
-                  <label className={cls('block text-sm font-medium text-blackout mb-1')}>
+                  <label
+                    className={cls(
+                      'text-blackout mb-1 block text-sm font-medium'
+                    )}
+                  >
                     Full name
                   </label>
                   <input
@@ -135,14 +196,18 @@ export default function ProfilePage() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className={cls(
-                      'w-full px-4 py-2 border border-[#DADCE0] rounded-lg',
-                      'focus:outline-none focus:ring-2 focus:ring-alexandra focus:border-transparent',
+                      'w-full rounded-lg border border-[#DADCE0] px-4 py-2',
+                      'focus:ring-alexandra focus:border-transparent focus:ring-2 focus:outline-none',
                       'text-blackout'
                     )}
                   />
                 </div>
                 <div>
-                  <label className={cls('block text-sm font-medium text-blackout mb-1')}>
+                  <label
+                    className={cls(
+                      'text-blackout mb-1 block text-sm font-medium'
+                    )}
+                  >
                     Email (Primary)
                   </label>
                   <input
@@ -150,17 +215,21 @@ export default function ProfilePage() {
                     value={email}
                     readOnly
                     className={cls(
-                      'w-full px-4 py-2 border border-[#DADCE0] rounded-lg bg-gray-50 cursor-not-allowed',
-                      'focus:outline-none focus:ring-1 focus:ring-gray-200',
+                      'w-full cursor-not-allowed rounded-lg border border-[#DADCE0] bg-gray-50 px-4 py-2',
+                      'focus:ring-1 focus:ring-gray-200 focus:outline-none',
                       'text-solid-matte-gray'
                     )}
                   />
-                  <p className="mt-1 text-xs text-solid-matte-gray italic">
+                  <p className="text-solid-matte-gray mt-1 text-xs italic">
                     Linked to your Google account.
                   </p>
                 </div>
                 <div>
-                  <label className={cls('block text-sm font-medium text-blackout mb-1')}>
+                  <label
+                    className={cls(
+                      'text-blackout mb-1 block text-sm font-medium'
+                    )}
+                  >
                     Phone
                   </label>
                   <input
@@ -168,14 +237,18 @@ export default function ProfilePage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className={cls(
-                      'w-full px-4 py-2 border border-[#DADCE0] rounded-lg',
-                      'focus:outline-none focus:ring-2 focus:ring-alexandra focus:border-transparent',
+                      'w-full rounded-lg border border-[#DADCE0] px-4 py-2',
+                      'focus:ring-alexandra focus:border-transparent focus:ring-2 focus:outline-none',
                       'text-blackout'
                     )}
                   />
                 </div>
                 <div>
-                  <label className={cls('block text-sm font-medium text-blackout mb-1')}>
+                  <label
+                    className={cls(
+                      'text-blackout mb-1 block text-sm font-medium'
+                    )}
+                  >
                     Bio
                   </label>
                   <textarea
@@ -184,32 +257,43 @@ export default function ProfilePage() {
                     onChange={(e) => setBio(e.target.value)}
                     placeholder="Tell us about yourself..."
                     className={cls(
-                      'w-full px-4 py-2 border border-[#DADCE0] rounded-lg',
-                      'focus:outline-none focus:ring-2 focus:ring-alexandra focus:border-transparent',
+                      'w-full rounded-lg border border-[#DADCE0] px-4 py-2',
+                      'focus:ring-alexandra focus:border-transparent focus:ring-2 focus:outline-none',
                       'text-blackout resize-none'
                     )}
                   />
                 </div>
-                {error && <p className={cls('text-sm text-red-600')}>{error}</p>}
+                {error && (
+                  <p className={cls('text-sm text-red-600')}>{error}</p>
+                )}
                 {success && (
-                  <p className={cls('text-sm text-green-600')}>Profile updated successfully.</p>
+                  <p className={cls('text-sm text-green-600')}>
+                    Profile updated successfully.
+                  </p>
                 )}
                 <div className={cls('flex gap-3')}>
                   <button
                     type="submit"
                     disabled={saving}
                     className={cls(
-                      'px-4 py-2 bg-alexandra text-white font-medium rounded-lg',
-                      'hover:bg-[#357AE8] disabled:opacity-60 transition-colors'
+                      'bg-alexandra rounded-lg px-4 py-2 font-medium text-white',
+                      'transition-colors hover:bg-[#357AE8] disabled:opacity-60'
                     )}
                   >
                     {saving ? 'Saving...' : 'Save'}
                   </button>
                   <button
                     type="button"
-                    onClick={() => setIsEditing(false)}
+                    onClick={() => {
+                      setIsEditing(false);
+                      setError(null);
+                      setSuccess(false);
+                      setFullName(user?.profile?.full_name ?? '');
+                      setPhone(user?.profile?.phone ?? '');
+                      setBio(user?.profile?.bio ?? '');
+                    }}
                     className={cls(
-                      'px-4 py-2 border border-[#DADCE0] rounded-lg font-medium',
+                      'rounded-lg border border-[#DADCE0] px-4 py-2 font-medium',
                       'hover:bg-tech-white transition-colors'
                     )}
                   >
@@ -220,26 +304,40 @@ export default function ProfilePage() {
             ) : (
               <>
                 <div className={cls('space-y-2')}>
-                  <p className={cls('text-sm text-solid-matte-gray')}>Full name</p>
-                  <p className={cls('font-medium text-blackout')}>{user?.profile?.full_name ?? '—'}</p>
+                  <p className={cls('text-solid-matte-gray text-sm')}>
+                    Full name
+                  </p>
+                  <p className={cls('text-blackout font-medium')}>
+                    {user?.profile?.full_name ?? '—'}
+                  </p>
                 </div>
-                <div className={cls('space-y-2 mt-4')}>
-                  <p className={cls('text-sm text-solid-matte-gray')}>Email</p>
-                  <p className={cls('font-medium text-blackout')}>{user?.email ?? '—'}</p>
+                <div className={cls('mt-4 space-y-2')}>
+                  <p className={cls('text-solid-matte-gray text-sm')}>Email</p>
+                  <p className={cls('text-blackout font-medium')}>
+                    {user?.email ?? '—'}
+                  </p>
                 </div>
-                <div className={cls('space-y-2 mt-4')}>
-                  <p className={cls('text-sm text-solid-matte-gray')}>Phone</p>
-                  <p className={cls('font-medium text-blackout')}>{user?.profile?.phone ?? '—'}</p>
+                <div className={cls('mt-4 space-y-2')}>
+                  <p className={cls('text-solid-matte-gray text-sm')}>Phone</p>
+                  <p className={cls('text-blackout font-medium')}>
+                    {user?.profile?.phone ?? '—'}
+                  </p>
                 </div>
-                <div className={cls('space-y-2 mt-4')}>
-                  <p className={cls('text-sm text-solid-matte-gray')}>Bio</p>
-                  <p className={cls('font-medium text-blackout whitespace-pre-wrap')}>{user?.profile?.bio ?? 'No bio yet.'}</p>
+                <div className={cls('mt-4 space-y-2')}>
+                  <p className={cls('text-solid-matte-gray text-sm')}>Bio</p>
+                  <p
+                    className={cls(
+                      'text-blackout font-medium whitespace-pre-wrap'
+                    )}
+                  >
+                    {user?.profile?.bio ?? 'No bio yet.'}
+                  </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsEditing(true)}
                   className={cls(
-                    'mt-4 px-4 py-2 border border-alexandra text-alexandra font-medium rounded-lg',
+                    'border-alexandra text-alexandra mt-4 rounded-lg border px-4 py-2 font-medium',
                     'hover:bg-alexandra/10 transition-colors'
                   )}
                 >
@@ -258,13 +356,15 @@ export default function ProfilePage() {
           'text-blackout'
         )}
       >
-        <h2 className={cls('text-lg font-semibold text-blackout mb-4')}>
+        <h2 className={cls('text-blackout mb-4 text-lg font-semibold')}>
           Blog posts I wrote
         </h2>
         {activityLoading ? (
-          <p className={cls('text-sm text-solid-matte-gray')}>Loading...</p>
+          <p className={cls('text-solid-matte-gray text-sm')}>Loading...</p>
         ) : myPosts.length === 0 ? (
-          <p className={cls('text-sm text-solid-matte-gray mb-4')}>No posts yet.</p>
+          <p className={cls('text-solid-matte-gray mb-4 text-sm')}>
+            No posts yet.
+          </p>
         ) : (
           <ul className={cls('space-y-3')}>
             {myPosts.map((post) => (
@@ -272,16 +372,20 @@ export default function ProfilePage() {
                 <Link
                   href={`/dashboard/blog/${post.id}`}
                   className={cls(
-                    'block py-2 px-3 rounded-lg border border-[#DADCE0]',
+                    'block rounded-lg border border-[#DADCE0] px-3 py-2',
                     'hover:border-alexandra/50 hover:bg-alexandra/5 transition-colors'
                   )}
                 >
-                  <span className={cls('font-medium text-blackout')}>{post.title}</span>
+                  <span className={cls('text-blackout font-medium')}>
+                    {post.title}
+                  </span>
                   <span
                     className={cls(
-                      'ml-2 text-xs px-2 py-0.5 rounded-sm uppercase',
-                      post.status === 'approved' && 'bg-green-100 text-green-800',
-                      post.status === 'pending' && 'bg-amber-100 text-amber-800',
+                      'ml-2 rounded-sm px-2 py-0.5 text-xs uppercase',
+                      post.status === 'approved' &&
+                        'bg-green-100 text-green-800',
+                      post.status === 'pending' &&
+                        'bg-amber-100 text-amber-800',
                       post.status === 'rejected' && 'bg-red-100 text-red-800'
                     )}
                   >
@@ -295,7 +399,7 @@ export default function ProfilePage() {
         <Link
           href="/dashboard/blog/submit"
           className={cls(
-            'mt-4 inline-block text-sm text-alexandra hover:underline font-medium'
+            'text-alexandra mt-4 inline-block text-sm font-medium hover:underline'
           )}
         >
           Submit a post
@@ -309,13 +413,15 @@ export default function ProfilePage() {
           'text-blackout'
         )}
       >
-        <h2 className={cls('text-lg font-semibold text-blackout mb-4')}>
+        <h2 className={cls('text-blackout mb-4 text-lg font-semibold')}>
           Projects I&apos;ve contributed to
         </h2>
         {activityLoading ? (
-          <p className={cls('text-sm text-solid-matte-gray')}>Loading...</p>
+          <p className={cls('text-solid-matte-gray text-sm')}>Loading...</p>
         ) : myProjects.length === 0 ? (
-          <p className={cls('text-sm text-solid-matte-gray mb-4')}>No projects yet.</p>
+          <p className={cls('text-solid-matte-gray mb-4 text-sm')}>
+            No projects yet.
+          </p>
         ) : (
           <ul className={cls('space-y-3')}>
             {myProjects.map((p) => (
@@ -323,15 +429,18 @@ export default function ProfilePage() {
                 <Link
                   href={`/dashboard/projects/${p.id}`}
                   className={cls(
-                    'block py-2 px-3 rounded-lg border border-[#DADCE0]',
+                    'block rounded-lg border border-[#DADCE0] px-3 py-2',
                     'hover:border-alexandra/50 hover:bg-alexandra/5 transition-colors'
                   )}
                 >
-                  <span className={cls('font-medium text-blackout')}>{p.title}</span>
+                  <span className={cls('text-blackout font-medium')}>
+                    {p.title}
+                  </span>
                   <span
                     className={cls(
-                      'ml-2 text-xs px-2 py-0.5 rounded-sm uppercase',
-                      p.status === 'ongoing' && 'bg-alexandra/20 text-alexandra',
+                      'ml-2 rounded-sm px-2 py-0.5 text-xs uppercase',
+                      p.status === 'ongoing' &&
+                        'bg-alexandra/20 text-alexandra',
                       p.status === 'completed' && 'bg-green-100 text-green-800'
                     )}
                   >
@@ -345,7 +454,7 @@ export default function ProfilePage() {
         <Link
           href="/dashboard/projects"
           className={cls(
-            'mt-4 inline-block text-sm text-alexandra hover:underline font-medium'
+            'text-alexandra mt-4 inline-block text-sm font-medium hover:underline'
           )}
         >
           View all projects
@@ -359,13 +468,15 @@ export default function ProfilePage() {
           'text-blackout'
         )}
       >
-        <h2 className={cls('text-lg font-semibold text-blackout mb-4')}>
+        <h2 className={cls('text-blackout mb-4 text-lg font-semibold')}>
           Events I&apos;ve registered for
         </h2>
         {activityLoading ? (
-          <p className={cls('text-sm text-solid-matte-gray')}>Loading...</p>
+          <p className={cls('text-solid-matte-gray text-sm')}>Loading...</p>
         ) : registeredEvents.length === 0 ? (
-          <p className={cls('text-sm text-solid-matte-gray mb-4')}>No events registered yet.</p>
+          <p className={cls('text-solid-matte-gray mb-4 text-sm')}>
+            No events registered yet.
+          </p>
         ) : (
           <ul className={cls('space-y-3')}>
             {registeredEvents.map((ev) => (
@@ -373,13 +484,17 @@ export default function ProfilePage() {
                 <Link
                   href={`/dashboard/events/${ev.id}`}
                   className={cls(
-                    'block py-2 px-3 rounded-lg border border-[#DADCE0]',
+                    'block rounded-lg border border-[#DADCE0] px-3 py-2',
                     'hover:border-alexandra/50 hover:bg-alexandra/5 transition-colors'
                   )}
                 >
-                  <span className={cls('font-medium text-blackout')}>{ev.title}</span>
-                  <span className={cls('ml-2 text-xs text-solid-matte-gray')}>
-                    {new Date(ev.date).toLocaleDateString('en-NG', { dateStyle: 'medium' })}
+                  <span className={cls('text-blackout font-medium')}>
+                    {ev.title}
+                  </span>
+                  <span className={cls('text-solid-matte-gray ml-2 text-xs')}>
+                    {new Date(ev.date).toLocaleDateString('en-NG', {
+                      dateStyle: 'medium'
+                    })}
                   </span>
                 </Link>
               </li>
@@ -389,7 +504,7 @@ export default function ProfilePage() {
         <Link
           href="/dashboard/events"
           className={cls(
-            'mt-4 inline-block text-sm text-alexandra hover:underline font-medium'
+            'text-alexandra mt-4 inline-block text-sm font-medium hover:underline'
           )}
         >
           Browse events

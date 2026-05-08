@@ -81,6 +81,7 @@ type AppFooterProps = {
 };
 
 export const AppFooter = ({ onAction }: AppFooterProps) => {
+  const year = new Date().getFullYear();
   return (
     <footer className="w-full bg-tech-white text-solid-matte-gray">
       <div className="mx-auto flex w-full max-w-94 flex-col gap-8 px-6 py-10 md:max-w-360 md:px-10 lg:gap-10 lg:py-14">
@@ -145,7 +146,7 @@ export const AppFooter = ({ onAction }: AppFooterProps) => {
 
           <div className="flex flex-col gap-2 text-xs md:flex-row md:items-center md:gap-6">
             <span>
-              2025 Google Developers Group UNN Chapter. Designed and Maintained by the GDG UNN
+              {year} Google Developers Group UNN Chapter. Designed and Maintained by the GDG UNN
               Community.
             </span>
             <span className="font-semibold text-alexandra">

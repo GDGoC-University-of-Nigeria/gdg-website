@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Button, EmptyState, PageHeader, StatusBadge } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import type { Project } from '@/lib/api';
 import { cls } from '@/utils';
@@ -21,9 +22,20 @@ export default function ProjectsPage() {
 
   return (
     <div className={cls('space-y-6')}>
-      <h1 className={cls('text-2xl md:text-3xl font-medium text-blackout')}>
-        Projects
-      </h1>
+      <PageHeader
+        title="Projects"
+        description="Browse community and personal projects, or start one."
+        actions={
+          <>
+            <Link href="/dashboard/projects/me/applications">
+              <Button variant="outline" size="md">My applications</Button>
+            </Link>
+            <Link href="/admin/projects">
+              <Button size="md">Create project</Button>
+            </Link>
+          </>
+        }
+      />
       <section
         className={cls(
           'rounded-2xl border border-[#DADCE0] bg-white p-6 shadow-sm',
@@ -37,22 +49,29 @@ export default function ProjectsPage() {
           <p className={cls('text-red-600')}>{error}</p>
         )}
         {!loading && !error && projects.length === 0 && (
-          <p className={cls('text-solid-matte-gray')}>No projects yet.</p>
+          <EmptyState
+            title="No projects yet"
+            description="There are no published projects right now."
+          />
         )}
         {!loading && !error && projects.length > 0 && (
           <ul className={cls('space-y-4')}>
             {projects.map((p) => (
               <li key={p.id}>
-                <Link
-                  href={`/dashboard/projects/${p.id}`}
+                <article
                   className={cls(
-                    'block rounded-xl border border-[#DADCE0] bg-white p-5 shadow-sm',
+                    'rounded-xl border border-[#DADCE0] bg-white p-5 shadow-sm',
                     'transition-shadow hover:shadow-md hover:border-alexandra/50'
                   )}
                 >
                   <div className={cls('flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between')}>
                     <div className={cls('min-w-0')}>
-                      <h2 className={cls('text-lg font-medium text-blackout')}>{p.title}</h2>
+                      <Link
+                        href={`/dashboard/projects/${p.id}`}
+                        className={cls('text-lg font-medium text-blackout hover:text-alexandra transition-colors')}
+                      >
+                        {p.title}
+                      </Link>
                       <p className={cls('mt-2 text-sm text-solid-matte-gray line-clamp-2')}>
                         {p.description}
                       </p>
@@ -70,28 +89,11 @@ export default function ProjectsPage() {
                     </div>
 
                     <div className={cls('flex items-center gap-2 sm:shrink-0')}>
-                      <span
-                        className={cls(
-                          'text-xs px-2 py-0.5 rounded-sm uppercase',
-                          p.project_type === 'community' && 'bg-[#34A853]/20 text-[#34A853]',
-                          p.project_type === 'personal' && 'bg-alexandra/20 text-alexandra'
-                        )}
-                      >
-                        {p.project_type}
-                      </span>
-                      <span
-                        className={cls(
-                          'text-xs px-2 py-0.5 rounded-sm uppercase',
-                          p.status === 'ongoing'
-                            ? 'bg-alexandra/20 text-alexandra'
-                            : 'bg-[#DADCE0] text-solid-matte-gray'
-                        )}
-                      >
-                        {p.status}
-                      </span>
+                      <StatusBadge status={p.project_type} />
+                      <StatusBadge status={p.status} />
                     </div>
                   </div>
-                </Link>
+                </article>
               </li>
             ))}
           </ul>

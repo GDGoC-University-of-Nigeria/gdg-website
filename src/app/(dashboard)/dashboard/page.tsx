@@ -107,9 +107,10 @@ export default function DashboardPage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setStatsLoading(true);
+    const today = new Date().toISOString().slice(0, 10);
     Promise.all([
-      api.getEvents({ limit: 100 }).catch(() => []),
-      api.getProjects({ limit: 100 }).catch(() => []),
+      api.getEvents({ from_date: today, limit: 100 }).catch(() => []),
+      api.getProjects({ status: 'ongoing', limit: 100 }).catch(() => []),
       api.getBlogposts({ limit: 100 }).catch(() => []),
     ])
       .then(([events, projects, posts]) => {
@@ -326,7 +327,7 @@ export default function DashboardPage() {
       </section>
 
       {/* 4. Complete your profile CTA */}
-      {!user?.profile?.full_name && (
+      {!user?.profile?.is_complete && (
         <section
           className={cls(
             'rounded-xl border border-alexandra/30 bg-alexandra/10 p-6 mb-8',

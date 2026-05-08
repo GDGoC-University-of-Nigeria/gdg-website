@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ReactSVG } from 'react-svg';
 import { Drawer } from '@mui/material';
 import Image from 'next/image';
@@ -26,13 +26,18 @@ function isLinkActive(pathname: string, target: string): boolean {
 
 export function AdminHeader() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { logout, isHydrated } = useAuth();
 
-  const handleNavClick = (item: (typeof adminLinks)[0]) => {
+  const handleNavClick = async (item: (typeof adminLinks)[0]) => {
     if (item.label === 'Log out') {
-      logout();
-      window.location.href = '/';
+      try {
+        await logout();
+        router.replace('/');
+      } catch {
+        router.replace('/');
+      }
     }
     setIsDrawerOpen(false);
   };

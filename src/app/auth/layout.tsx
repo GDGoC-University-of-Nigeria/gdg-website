@@ -53,7 +53,7 @@ export default function AuthLayout({
         >
           <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.2em] text-zinc-500 uppercase">
             <span
-              className="inline-flex h-1.5 w-1.5 rounded-full bg-[#4285F4]"
+              className="bg-alexandra inline-flex h-1.5 w-1.5 rounded-full"
               aria-hidden
             />
             GDG · UNN Campus
@@ -72,7 +72,7 @@ export default function AuthLayout({
                 {headline}
               </p>
               <h1 className="text-3xl leading-tight font-bold tracking-tight text-white md:text-4xl">
-                <span className="text-[#4285F4]">{`\{`}</span>
+                <span className="text-alexandra">{`\{`}</span>
                 {text}
                 <span className="text-[#EA4335]">{`\}`}</span>
               </h1>
@@ -94,7 +94,7 @@ export default function AuthLayout({
                   delay: 0.12 + i * 0.06,
                   ease: 'easeOut'
                 }}
-                className="flex gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-3 backdrop-blur-sm"
+                className="flex gap-3 rounded-xl border border-white/10 bg-white/4 px-3.5 py-3 backdrop-blur-sm"
               >
                 <span
                   className={`mt-1.5 size-2 shrink-0 rounded-full ${dotClass}`}
@@ -118,7 +118,7 @@ export default function AuthLayout({
               className={`font-medium transition-colors ${
                 mode === 'login'
                   ? 'text-white'
-                  : 'text-zinc-400 hover:text-[#4285F4]'
+                  : 'hover:text-alexandra text-zinc-400'
               }`}
             >
               Sign in
@@ -132,7 +132,7 @@ export default function AuthLayout({
               className={`font-medium transition-colors ${
                 mode === 'signup'
                   ? 'text-white'
-                  : 'text-zinc-400 hover:text-[#4285F4]'
+                  : 'hover:text-alexandra text-zinc-400'
               }`}
             >
               Create account

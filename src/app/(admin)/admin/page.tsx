@@ -17,7 +17,7 @@ type OverviewStats = {
 };
 
 export default function AdminPage() {
-  const { user } = useAuth();
+  const { user, isHydrated } = useAuth();
   const [stats, setStats] = useState<OverviewStats>({
     users: 0,
     blogApproved: 0,
@@ -27,38 +27,61 @@ export default function AdminPage() {
     upcomingEvents: 0,
     ongoingProjects: 0,
   });
-  const [loading, setLoading] = useState(true);
+  const [statsReady, setStatsReady] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+    if (!isHydrated || !user) return;
+    let cancelled = false;
     const today = new Date().toISOString().slice(0, 10);
-    setLoading(true);
-    Promise.all([
-      api.getUsers().then((list) => list.length).catch(() => 0),
-      api.getAdminBlogposts({ status: 'approved', limit: 5000 }).then((list) => list.length).catch(() => 0),
-      api.getEvents({ limit: 5000 }).then((list) => list.length).catch(() => 0),
-      api.getProjects({ limit: 5000 }).then((list) => list.length).catch(() => 0),
-      api.getAdminBlogposts({ status: 'pending', limit: 500 }).then((list) => list.length).catch(() => 0),
-      api.getEvents({ from_date: today, limit: 500 }).then((list) => list.length).catch(() => 0),
-      api.getProjects({ status: 'ongoing', limit: 500 }).then((list) => list.length).catch(() => 0),
-    ])
-      .then(
-        ([users, blogApproved, events, projects, pendingPosts, upcomingEvents, ongoingProjects]) =>
+    api
+      .getAdminStats()
+      .then((s) => {
+        if (!cancelled) {
           setStats({
-            users,
-            blogApproved,
-            events,
-            projects,
-            pendingPosts,
-            upcomingEvents,
-            ongoingProjects,
-          })
+            users: s.users,
+            blogApproved: s.blog_approved,
+            events: s.events_total,
+            projects: s.projects_total,
+            pendingPosts: s.blog_pending,
+            upcomingEvents: s.upcoming_events,
+            ongoingProjects: s.ongoing_projects
+          });
+        }
+      })
+      .catch(() =>
+        Promise.all([
+          api.getUsers().then((list) => list.length).catch(() => 0),
+          api.getAdminBlogposts({ status: 'approved', limit: 5000 }).then((list) => list.length).catch(() => 0),
+          api.getEvents({ limit: 5000 }).then((list) => list.length).catch(() => 0),
+          api.getProjects({ limit: 5000 }).then((list) => list.length).catch(() => 0),
+          api.getAdminBlogposts({ status: 'pending', limit: 500 }).then((list) => list.length).catch(() => 0),
+          api.getEvents({ from_date: today, limit: 500 }).then((list) => list.length).catch(() => 0),
+          api.getProjects({ status: 'ongoing', limit: 500 }).then((list) => list.length).catch(() => 0),
+        ]).then(
+          ([users, blogApproved, events, projects, pendingPosts, upcomingEvents, ongoingProjects]) => {
+            if (!cancelled) {
+              setStats({
+                users,
+                blogApproved,
+                events,
+                projects,
+                pendingPosts,
+                upcomingEvents,
+                ongoingProjects
+              });
+            }
+          }
+        )
       )
-      .finally(() => setLoading(false));
-  }, [user]);
+      .finally(() => {
+        if (!cancelled) setStatsReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isHydrated, user]);
+
+  const loading = !isHydrated || (Boolean(user) && !statsReady);
 
   return (
     <div className={cls('space-y-0')}>

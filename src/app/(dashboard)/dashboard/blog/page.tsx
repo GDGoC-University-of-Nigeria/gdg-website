@@ -3,25 +3,30 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api';
 import type { BlogPost } from '@/lib/api';
 import { cls } from '@/utils';
 
 export default function BlogPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const submittedJustNow = searchParams.get('submitted') === '1';
 
   useEffect(() => {
-    if (searchParams.get('submitted') === '1') {
-      setShowSuccess(true);
-      const t = setTimeout(() => setShowSuccess(false), 5000);
-      return () => clearTimeout(t);
-    }
-  }, [searchParams]);
+    if (!submittedJustNow) return;
+    toast.success(
+      'Your post has been submitted for review. It will appear once approved by an admin.'
+    );
+    const t = setTimeout(() => {
+      router.replace('/dashboard/blog');
+    }, 100);
+    return () => clearTimeout(t);
+  }, [submittedJustNow, router]);
 
   useEffect(() => {
     api
@@ -33,16 +38,6 @@ export default function BlogPage() {
 
   return (
     <div className={cls('space-y-6')}>
-      {showSuccess && (
-        <div
-          className={cls(
-            'rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-800',
-            'text-sm font-medium'
-          )}
-        >
-          Your post has been submitted for review. It will appear once approved by an admin.
-        </div>
-      )}
       <div className={cls('flex items-center justify-between')}>
         <h1 className={cls('text-2xl md:text-3xl font-medium text-blackout')}>
           Blog

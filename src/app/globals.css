@@ -1,5 +1,17 @@
 @import 'tailwindcss';
 
+:root {
+  --color-border: #dadce0;
+  --color-surface-muted: #f8f8f8;
+  --color-primary-hover: #357ae8;
+  --color-placeholder: #9aa0a6;
+  --color-success: #1e8e3e;
+  --color-success-soft: rgba(52, 168, 83, 0.15);
+  --color-google-green: #34a853;
+  --color-google-red: #ea4335;
+  --color-google-yellow: #fbbc05;
+}
+
 @theme {
   --font-product-sans: var(--product-sans-font);
 
@@ -100,8 +112,4 @@ input[data-autocompleted] {
 
 .team-scroll::-webkit-scrollbar {
   display: none; /* Chrome/Safari/Opera */
-}
-.react-p5 {
-  width: 100% !important;
-  height: 100% !important;
 }
