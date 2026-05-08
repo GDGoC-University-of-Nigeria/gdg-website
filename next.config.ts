@@ -24,6 +24,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
       },
     ],
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api-proxy/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'}/:path*`
+      }
+    ];
   }
 };
 

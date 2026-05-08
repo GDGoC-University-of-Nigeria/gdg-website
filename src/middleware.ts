@@ -2,16 +2,14 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
- * Server-side gate: require an auth session cookie for /dashboard and /admin.
- * Comma-separated names in AUTH_SESSION_COOKIE_NAMES (default: access_token).
- * Set AUTH_ENABLE_ROUTE_GUARD=0 to disable (e.g. Bearer-only backends in dev).
- * Admin role is still enforced client-side via RequireAdmin + API.
+ * Server-side route guard for /dashboard and /admin.
+ *
+ * IMPORTANT:
+ * For cross-origin OAuth setups (API on different domain), frontend middleware
+ * cannot reliably read API cookies. Keep this OFF unless you explicitly use
+ * same-domain auth cookies available to the Next app domain.
  */
-/** Prod: on unless AUTH_ENABLE_ROUTE_GUARD=0. Dev: off unless AUTH_ENABLE_ROUTE_GUARD=1. */
-const GUARD_ENABLED =
-  process.env.NODE_ENV === 'production'
-    ? process.env.AUTH_ENABLE_ROUTE_GUARD !== '0'
-    : process.env.AUTH_ENABLE_ROUTE_GUARD === '1';
+const GUARD_ENABLED = process.env.AUTH_ENABLE_ROUTE_GUARD === '1';
 const SESSION_COOKIE_NAMES = (
   process.env.AUTH_SESSION_COOKIE_NAMES ?? 'access_token'
 )

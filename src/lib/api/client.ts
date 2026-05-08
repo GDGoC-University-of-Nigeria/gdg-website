@@ -27,6 +27,19 @@ export class ApiError extends Error {
 }
 
 const getApiUrl = (): string => {
+  // In local dev, use Next.js rewrite proxy to avoid browser CORS preflights.
+  if (
+    process.env.NODE_ENV === 'development' &&
+    process.env.NEXT_PUBLIC_DEV_API_PROXY !== '0'
+  ) {
+    return '';
+  }
+  const url = process.env.NEXT_PUBLIC_API_URL;
+  if (!url) return 'http://localhost:8000';
+  return url.replace(/\/$/, '');
+};
+
+const getExternalApiUrl = (): string => {
   const url = process.env.NEXT_PUBLIC_API_URL;
   if (!url) return 'http://localhost:8000';
   return url.replace(/\/$/, '');
@@ -78,7 +91,12 @@ export function stripOAuthTokenFromBrowserUrl(): void {
 
 export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const base = getApiUrl();
-  const url = path.startsWith('http') ? path : `${base}${path.startsWith('/') ? '' : '/'}${path}`;
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const url = path.startsWith('http')
+    ? path
+    : base
+      ? `${base}${normalizedPath}`
+      : `/api-proxy${normalizedPath}`;
   const isFormData =
     typeof FormData !== 'undefined' && options.body instanceof FormData;
   const headers: HeadersInit = {
@@ -110,7 +128,7 @@ export const api = {
   getApiUrl,
 
   getGoogleAuthUrl(): string {
-    return `${getApiUrl()}/auth/google`;
+    return `${getExternalApiUrl()}/auth/google`;
   },
 
   logout(): Promise<{ message: string }> {
