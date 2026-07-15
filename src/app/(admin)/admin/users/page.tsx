@@ -18,6 +18,9 @@ import { cls } from '@/utils';
 
 export default function AdminUsersPage() {
   const { user } = useAuth();
+  
+  if (!user) return null;
+
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

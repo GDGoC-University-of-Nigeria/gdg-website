@@ -10,6 +10,9 @@ import { cls } from '@/utils';
 
 export default function AdminEventsPage() {
   const { user } = useAuth();
+  
+  if (!user) return null;
+
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

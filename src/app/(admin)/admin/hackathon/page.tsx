@@ -16,6 +16,9 @@ import { cls } from '@/utils';
 
 export default function AdminHackathonPage() {
   const { user } = useAuth();
+  
+  if (!user) return null;
+
   const [registrations, setRegistrations] = useState<HackathonRegistrationResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
