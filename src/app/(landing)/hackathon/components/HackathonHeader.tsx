@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import heroImage from '@/assets/hero-3.jpg';
+import Link from "next/link";
 
 export function HackathonHeader({ onRegisterClick }: { onRegisterClick: () => void }) {
   return (
