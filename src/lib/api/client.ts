@@ -645,6 +645,13 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(payload)
       });
+    },
+    getRegistrations(params?: { skip?: number; limit?: number }): Promise<HackathonRegistrationResponse[]> {
+      const search = new URLSearchParams();
+      if (params?.skip !== undefined) search.set('skip', String(params.skip));
+      if (params?.limit !== undefined) search.set('limit', String(params.limit));
+      const qs = search.toString();
+      return request<HackathonRegistrationResponse[]>(`/hackathon/admin${qs ? `?${qs}` : ''}`);
     }
   }
 };

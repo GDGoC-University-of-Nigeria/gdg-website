@@ -28,7 +28,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hasSession = hasSessionCookie(request);
 
-  if ((pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) && !hasSession) {
+  if (pathname.startsWith('/dashboard') && !hasSession) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth';
     url.searchParams.set('next', pathname);
@@ -39,5 +39,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/admin/:path*']
+  matcher: ['/dashboard/:path*']
 };

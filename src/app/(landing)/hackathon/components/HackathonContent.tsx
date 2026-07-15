@@ -86,6 +86,22 @@ export function HackathonContent() {
             </div>
           </section>
 
+          <section>
+            <h3 className="text-2xl font-medium text-blackout mb-4">Resources</h3>
+            <ul className="list-disc pl-6 space-y-3 leading-7 text-solid-matte-gray">
+              <li>
+                <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-blackout font-medium hover:underline">
+                  Google AI Studio
+                </a> - The fastest way to build with Gemini and Gemma.
+              </li>
+              <li>
+                <a href="https://deepmind.google/models/gemma/gemma-4/" target="_blank" rel="noopener noreferrer" className="text-blackout font-medium hover:underline">
+                  Gemma 4
+                </a> - State-of-the-art open models by Google DeepMind.
+              </li>
+            </ul>
+          </section>
+
         </div>
 
         {/* Sidebar */}

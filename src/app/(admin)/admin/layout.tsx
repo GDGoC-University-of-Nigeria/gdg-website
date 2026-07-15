@@ -1,6 +1,5 @@
 'use client';
 
-import { RequireAdmin } from '@/components/auth/RequireAdmin';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { cls } from '@/utils';
 
@@ -10,7 +9,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <RequireAdmin>
+    <>
       <a
         href="#admin-main"
         className={cls(
@@ -29,6 +28,6 @@ export default function AdminLayout({
           <div className={cls('mt-6')}>{children}</div>
         </main>
       </div>
-    </RequireAdmin>
+    </>
   );
 }
