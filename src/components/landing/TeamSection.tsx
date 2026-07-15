@@ -13,6 +13,7 @@ import designer2Image from '@/assets/designer-2.png';
 import techWriterImage from '@/assets/tech-writer.jpeg';
 
 import { api, type TeamMemberResponse } from '@/lib/api';
+import { Skeleton } from '@/components/ui';
 import { cls } from '@/utils';
 
 const IMAGE_BY_NAME: Record<string, StaticImageData> = {
@@ -131,9 +132,17 @@ export const TeamSection = () => {
           </p>
         </div>
 
-        <div className="relative">
+        <div className="relative" aria-busy={loading}>
           {loading ? (
-            <p className="py-12 text-center text-solid-matte-gray">Loading...</p>
+            <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="flex flex-col gap-3">
+                  <Skeleton className="aspect-square w-full rounded-2xl" />
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              ))}
+            </div>
           ) : members.length === 0 ? (
             <p className="py-12 text-center text-solid-matte-gray">No team members to display.</p>
           ) : (

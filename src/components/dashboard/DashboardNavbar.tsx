@@ -11,7 +11,10 @@ import { cls } from '@/utils';
 
 type LinkItem = { target: string; label: string };
 
-function getDashboardLinks(isAdmin: boolean): LinkItem[] {
+function getDashboardLinks(
+  isAdmin: boolean,
+  isAuthenticated: boolean
+): LinkItem[] {
   const links: LinkItem[] = [
     { target: '/dashboard', label: 'Dashboard' },
     { target: '/dashboard/profile', label: 'Profile' },
@@ -21,7 +24,10 @@ function getDashboardLinks(isAdmin: boolean): LinkItem[] {
     { target: '/dashboard/blog', label: 'Blog' }
   ];
   if (isAdmin) links.push({ target: '/admin', label: 'Admin' });
-  links.push({ target: '#', label: 'Log out' });
+  links.push({
+    target: isAuthenticated ? '#' : '/auth',
+    label: isAuthenticated ? 'Log out' : 'Log in'
+  });
   return links;
 }
 
@@ -30,7 +36,7 @@ export function DashboardNavbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout, isHydrated } = useAuth();
-  const navLinks = getDashboardLinks(user?.is_admin ?? false);
+  const navLinks = getDashboardLinks(user?.is_admin ?? false, Boolean(user));
 
   const handleNavClick = async (item: LinkItem) => {
     if (item.label === 'Log out') {
@@ -39,6 +45,8 @@ export function DashboardNavbar() {
       } finally {
         router.replace('/');
       }
+    } else if (item.label === 'Log in') {
+      router.push('/auth');
     }
     setIsDrawerOpen(false);
   };
@@ -47,7 +55,8 @@ export function DashboardNavbar() {
     const isActive =
       label === 'Dashboard'
         ? pathname === '/dashboard'
-        : pathname === target || (target !== '/dashboard' && pathname.startsWith(target));
+        : pathname === target ||
+          (target !== '/dashboard' && pathname.startsWith(target));
     return cls(
       'rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors',
       isActive
@@ -59,7 +68,11 @@ export function DashboardNavbar() {
   return (
     <>
       {isDrawerOpen && (
-        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-50 md:hidden"
+          role="dialog"
+          aria-modal="true"
+        >
           <button
             type="button"
             aria-label="Close menu overlay"
@@ -80,7 +93,7 @@ export function DashboardNavbar() {
               <button
                 type="button"
                 onClick={() => setIsDrawerOpen(false)}
-                className="-m-2 p-2 text-solid-matte-gray hover:text-blackout"
+                className="text-solid-matte-gray hover:text-blackout -m-2 p-2"
                 aria-label="Close menu"
               >
                 <ReactSVG src="/graphics/close.svg" />
@@ -95,7 +108,7 @@ export function DashboardNavbar() {
                       type="button"
                       onClick={() => handleNavClick({ target, label })}
                       className={cls(
-                        'rounded-lg px-3 py-3 text-left font-medium text-solid-matte-gray',
+                        'text-solid-matte-gray rounded-lg px-3 py-3 text-left font-medium',
                         'hover:bg-red-50 hover:text-red-600'
                       )}
                     >
@@ -119,7 +132,10 @@ export function DashboardNavbar() {
 
       <header className="sticky top-0 z-20 w-full border-b border-[#DADCE0] bg-white shadow-sm">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          <Link href="/dashboard" className="flex min-w-0 shrink-0 items-center">
+          <Link
+            href="/dashboard"
+            className="flex min-w-0 shrink-0 items-center"
+          >
             <Image
               alt="GDG UNN"
               src="/images/logo-banner.png"
@@ -140,14 +156,17 @@ export function DashboardNavbar() {
                         type="button"
                         onClick={() => handleNavClick({ target, label })}
                         className={cls(
-                          'rounded-lg px-3 py-2 text-sm font-medium text-solid-matte-gray',
+                          'text-solid-matte-gray rounded-lg px-3 py-2 text-sm font-medium',
                           'transition-colors hover:bg-red-50 hover:text-red-600'
                         )}
                       >
                         {label}
                       </button>
                     ) : (
-                      <Link href={target} className={navLinkClass(target, label)}>
+                      <Link
+                        href={target}
+                        className={navLinkClass(target, label)}
+                      >
                         {label}
                       </Link>
                     )}
@@ -159,7 +178,7 @@ export function DashboardNavbar() {
           <button
             type="button"
             onClick={() => setIsDrawerOpen(true)}
-            className="-m-2 p-2 text-solid-matte-gray hover:text-blackout md:hidden"
+            className="text-solid-matte-gray hover:text-blackout -m-2 p-2 md:hidden"
             aria-label="Open menu"
           >
             <ReactSVG src="/graphics/menu.svg" className="h-6 w-6" />

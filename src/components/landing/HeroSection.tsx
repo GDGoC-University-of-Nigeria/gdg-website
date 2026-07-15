@@ -3,13 +3,13 @@ import Link from 'next/link';
 
 import bgGrid from '@/assets/bg-grid.jpg';
 import hero1 from '@/assets/hero-1.jpg';
-import hero2 from '@/assets/hero-2.png';
-import hero3 from '@/assets/hero-3.png';
-import hero4 from '@/assets/hero-4.png';
-import hero5 from '@/assets/hero-5.png';
-import hero6 from '@/assets/hero-6.png';
-import hero7 from '@/assets/hero-7.png';
-import hero8 from '@/assets/hero-8.png';
+import hero2 from '@/assets/hero-2.jpg';
+import hero3 from '@/assets/hero-3.jpg';
+import hero4 from '@/assets/hero-4.jpg';
+import hero5 from '@/assets/hero-5.jpg';
+import hero6 from '@/assets/hero-6.jpg';
+import hero7 from '@/assets/hero-7.jpg';
+import hero8 from '@/assets/hero-8.jpg';
 
 const heroImages = [hero1, hero2, hero3, hero4, hero5, hero6, hero7, hero8];
 

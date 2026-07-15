@@ -15,6 +15,7 @@ const adminLinks = [
   { target: '/admin/blog', label: 'Blog' },
   { target: '/admin/events', label: 'Events' },
   { target: '/admin/projects', label: 'Projects' },
+  { target: '/admin/hackathon', label: 'Hackathon' },
   { target: '#', label: 'Log out' }
 ];
 

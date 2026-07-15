@@ -86,7 +86,7 @@ export const AppFooter = ({ onAction }: AppFooterProps) => {
     <footer className="w-full bg-tech-white text-solid-matte-gray">
       <div className="mx-auto flex w-full max-w-94 flex-col gap-8 px-6 py-10 md:max-w-360 md:px-10 lg:gap-10 lg:py-14">
         <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
-          <div className="flex items-center justify-between gap-6 md:min-w-72 w-full lg:w-1/2">
+          <div className="flex items-center justify-between gap-6 w-full lg:w-1/2">
             <Image
               src={gdgLogo}
               alt="Google Developer Group UNN logo"
@@ -96,7 +96,7 @@ export const AppFooter = ({ onAction }: AppFooterProps) => {
             <div className="hidden h-36 w-px bg-gray-300 md:block" />
           </div>
 
-          <div className="max-w-full lg:max-w-1/2 grid flex-1 grid-cols-2 gap-8 md:grid-cols-3 md:gap-10">
+          <div className="w-full md:min-w-2/3 lg:w-1/2 grid flex-1 grid-cols-2 gap-8 md:grid-cols-3 md:gap-10">
             {navSections.map(({ title, links }) => (
               <div key={title ?? links[0].label} className="flex flex-col gap-2">
                 {title ? (
