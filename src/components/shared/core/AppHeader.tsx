@@ -98,6 +98,12 @@ export const AppHeader = () => {
         </div>
       )}
 
+      <div className="w-full bg-[#34A853] px-4 py-2.5 text-center text-sm font-medium text-white sm:px-6 lg:px-8">
+        Build with Gemma 4 Hackathon Sprint is live! Join us to build, innovate, and win amazing prizes.{' '}
+        <Link href="/hackathon" className="ml-2 inline-flex items-center underline hover:text-white/80">
+          Learn more &amp; register &rarr;
+        </Link>
+      </div>
       <header className="sticky top-0 z-20 w-full border-b border-[#DADCE0] bg-white shadow-sm">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-5 md:h-20 md:px-8">
           <Link className="flex min-w-0 shrink-0 items-center" href="/">

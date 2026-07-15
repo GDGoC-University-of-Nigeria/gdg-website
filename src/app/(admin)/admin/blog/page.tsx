@@ -35,7 +35,6 @@ export default function AdminBlogPage() {
   const PAGE_SIZE = 12;
 
   const loadPosts = async () => {
-    if (!user) return;
     setLoading(true);
     setError(null);
     try {

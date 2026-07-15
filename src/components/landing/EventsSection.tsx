@@ -274,7 +274,7 @@ export const EventsSection = () => {
                 </div>
 
                 <div className="absolute left-3 top-3">
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${isUpcoming ? 'bg-[#E8F5EB] text-[#137333]' : 'bg-[#F3F4F6] text-[#5F6368]'}`}>
+                  <span className={`uppercase px-2.5 py-1 text-xs font-semibold ${isUpcoming ? 'bg-[#E8F5EB] text-[#137333]' : 'bg-[#F3F4F6] text-[#5F6368]'}`}>
                     {category}
                   </span>
                 </div>

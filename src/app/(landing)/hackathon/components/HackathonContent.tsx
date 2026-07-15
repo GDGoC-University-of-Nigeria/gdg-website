@@ -39,25 +39,26 @@ export function HackathonContent() {
           </section>
 
           <section>
+            <div className="mb-8 overflow-hidden rounded-2xl bg-gradient-to-r from-[#4285F4] to-[#34A853] p-1">
+              <div className="flex h-full w-full flex-col items-center justify-center bg-white rounded-xl py-8 px-6 text-center">
+                <span className="mb-2 text-sm font-bold uppercase tracking-wider text-[#4285F4]">
+                  Total Prize Pool
+                </span>
+                <div className="text-5xl font-extrabold text-blackout">
+                  $1,000
+                </div>
+                <p className="mt-4 max-w-lg text-solid-matte-gray">
+                  Compete with the best on campus and win a share of the $1,000 prize pool! Bring your best ideas to life using Gemma 4.
+                </p>
+              </div>
+            </div>
+
             <h3 className="text-2xl font-medium text-blackout mb-4">Tracks & Awards</h3>
             <div className="space-y-6">
               <div className="rounded-xl border border-gray-200 p-6 bg-white shadow-sm">
                 <div className="flex justify-between items-start mb-2">
-                  <h4 className="text-xl font-medium text-blackout">Local Frontier Innovation</h4>
-                  <span className="inline-flex items-center rounded-full bg-[#E8F5EB] px-3 py-1 text-sm font-semibold text-[#137333]">
-                    $250
-                  </span>
-                </div>
-                <p className="text-solid-matte-gray leading-7">
-                  <strong className="text-blackout">The Vibe:</strong> Push the absolute boundaries of what open models can achieve.<br />
-                  <strong className="text-blackout">The Focus:</strong> Build an application using the Gemma 4 family that champions innovation, creativity, and out-of-the-box thinking.
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-gray-200 p-6 bg-white shadow-sm">
-                <div className="flex justify-between items-start mb-2">
                   <h4 className="text-xl font-medium text-blackout">Best Idea and Implementation</h4>
-                  <span className="inline-flex items-center rounded-full bg-[#E8F5EB] px-3 py-1 text-sm font-semibold text-[#137333]">
+                  <span className="inline-flex items-center uppercase bg-[#E8F5EB] px-3 py-1 text-sm font-semibold text-[#137333]">
                     $250 (Top 4 Teams)
                   </span>
                 </div>
@@ -70,13 +71,17 @@ export function HackathonContent() {
 
           <section>
             <h3 className="text-2xl font-medium text-blackout mb-4">Judges</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              {['Mark Ndubuisi', 'Nnaemeka Obi', 'Sarah Nzeshi'].map((judge, index) => {
-                const colors = ['bg-[#4285F4]', 'bg-[#EA4335]', 'bg-[#FBBC05]'];
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {['Mark Ndubuisi', 'Nnaemeka Obi', 'Sarah Nzeshi', 'DevDanny'].map((judge, index) => {
+                const colors = ['bg-[#4285F4]', 'bg-[#EA4335]', 'bg-[#FBBC05]', 'bg-[#34A853]'];
                 return (
                   <div key={judge} className="flex flex-col items-center p-6 bg-white rounded-xl border border-gray-200 shadow-sm text-center">
-                    <div className={`h-16 w-16 ${colors[index % colors.length]} rounded-full flex items-center justify-center text-white text-xl font-medium mb-4`}>
-                      {judge.split(' ').map(n => n[0]).join('')}
+                    <div className={`h-16 w-16 ${colors[index % colors.length]} rounded-full flex items-center justify-center overflow-hidden mb-4 p-1`}>
+                      <img 
+                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${judge.replace(' ', '')}&backgroundColor=transparent`} 
+                        alt={judge} 
+                        className="h-full w-full object-cover rounded-full bg-white"
+                      />
                     </div>
                     <h4 className="text-lg font-medium text-blackout">{judge}</h4>
                     <p className="text-sm text-solid-matte-gray mt-1">Hackathon Judge</p>

@@ -27,7 +27,6 @@ export default function AdminUsersPage() {
   const [confirmReactivateId, setConfirmReactivateId] = useState<string | null>(null);
 
   const loadUsers = async () => {
-    if (!user) return;
     setLoading(true);
     setError(null);
     try {

@@ -22,7 +22,6 @@ export default function AdminHackathonPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const loadRegistrations = async () => {
-    if (!user) return;
     setLoading(true);
     setError(null);
     try {

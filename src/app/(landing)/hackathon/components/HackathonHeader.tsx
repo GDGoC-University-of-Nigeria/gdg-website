@@ -19,7 +19,7 @@ export function HackathonHeader({ onRegisterClick }: { onRegisterClick: () => vo
       <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <div className="mb-6 flex items-center justify-center gap-x-4">
-            <span className="inline-flex items-center rounded-full bg-[#E8F5EB] px-3 py-1 text-xs font-semibold text-[#137333] border border-[#137333]/20 shadow-sm">
+            <span className="inline-flex items-center uppercase bg-[#E8F5EB] px-3 py-1 text-xs font-semibold text-[#137333] border border-[#137333]/20 shadow-sm">
               Registration Open
             </span>
             <span className="text-sm font-medium text-solid-matte-gray">20 days to go</span>
