@@ -31,12 +31,13 @@ export function HackathonHeader({ onRegisterClick }: { onRegisterClick: () => vo
             Welcome to the Gemma 4 Hackathon Sprint, a fast-paced sprint where you'll get hands-on with the most capable open models from Google DeepMind. Build cool and innovative solutions with Google Gemma.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
-            <button
+            {/* <button
               onClick={onRegisterClick}
-              className="rounded bg-[#4285F4] px-8 py-3.5 text-sm font-medium text-white transition-transform hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(66,133,244,0.35)]"
             >
               Register for Hackathon
-            </button>
+            </button> */}
+            <Link              className="rounded bg-[#4285F4] px-8 py-3.5 text-sm font-medium text-white transition-transform hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(66,133,244,0.35)]"
+ href="https://www.kaggle.com/competitions/build-with-gemma-gdgunn/">Register for Hackathon</Link>
             <a href="#details" className="text-sm font-medium leading-6 text-blackout hover:text-[#4285F4] transition-colors">
               View Details <span aria-hidden="true">→</span>
             </a>
