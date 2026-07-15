@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-import groupImage from '@/assets/group.png';
+import groupImage from '@/assets/group.jpg';
 import gdgLogo from '@/assets/smaller-logo.png';
 
 const UsersIcon = () => (

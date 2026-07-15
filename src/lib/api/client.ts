@@ -12,7 +12,9 @@ import type {
   Speaker,
   TeamMemberResponse,
   UpdateUserPayload,
-  User
+  User,
+  HackathonRegistrationPayload,
+  HackathonRegistrationResponse
 } from './types';
 
 export class ApiError extends Error {
@@ -635,5 +637,14 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ hidden })
     });
+  },
+
+  hackathon: {
+    register(payload: HackathonRegistrationPayload): Promise<HackathonRegistrationResponse> {
+      return request<HackathonRegistrationResponse>('/hackathon/register', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+    }
   }
 };

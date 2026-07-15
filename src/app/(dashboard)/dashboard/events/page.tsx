@@ -1,30 +1,60 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { api, ApiError } from '@/lib/api';
-import type { Event } from '@/lib/api';
 import { cls } from '@/utils';
 
+type CommunityEvent = {
+  id: string;
+  title: string;
+  description: string | null;
+  date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  image_url: string | null;
+  location: string | null;
+  external_url: string;
+  source: string;
+};
+
 export default function EventsPage() {
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<CommunityEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api
-      .getEvents({ limit: 50 })
-      .then(setEvents)
-      .catch((e) => setError(e instanceof ApiError ? e.message : 'Failed to load events'))
-      .finally(() => setLoading(false));
+    const loadEvents = async () => {
+      try {
+        const response = await fetch('/api/events/gdg');
+        const payload = (await response.json()) as { events?: CommunityEvent[] };
+        setEvents(Array.isArray(payload.events) ? payload.events : []);
+      } catch {
+        setError('Failed to load events');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEvents();
   }, []);
 
-  const formatDate = (d: string) => new Date(d).toLocaleDateString('en-NG', {
-    weekday: 'short',
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  const formatDate = (d: string | null) => {
+    if (!d) return 'See details on GDG community';
+    return new Date(d).toLocaleDateString('en-NG', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const getEventCategory = (date: string | null) => {
+    if (!date) return 'Community';
+    const eventDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    eventDate.setHours(0, 0, 0, 0);
+    return eventDate >= today ? 'Upcoming' : 'Past';
+  };
 
   return (
     <div className={cls('space-y-6')}>
@@ -48,28 +78,43 @@ export default function EventsPage() {
         )}
         {!loading && !error && events.length > 0 && (
           <ul className={cls('space-y-4')}>
-            {events.map((ev) => (
-              <li key={ev.id}>
-                <Link
-                  href={`/dashboard/events/${ev.id}`}
-                  className={cls(
-                    'block rounded-lg border border-[#DADCE0] p-4',
-                    'hover:border-alexandra/50 transition-colors'
-                  )}
-                >
-                  <h2 className={cls('font-semibold text-blackout mb-1')}>{ev.title}</h2>
-                  <p className={cls('text-sm text-solid-matte-gray mb-2')}>
-                    {formatDate(ev.date)}
-                    {ev.location && ` · ${ev.location}`}
-                  </p>
-                  {ev.description && (
-                    <p className={cls('text-sm text-solid-matte-gray line-clamp-2')}>
-                      {ev.description}
+            {events.map((ev) => {
+              const category = getEventCategory(ev.date);
+              const isUpcoming = category === 'Upcoming';
+
+              return (
+                <li key={ev.id}>
+                  <a
+                    href={ev.external_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={cls(
+                      'block rounded-lg border border-[#DADCE0] p-4',
+                      'hover:border-alexandra/50 transition-colors'
+                    )}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h2 className={cls('font-semibold text-blackout mb-1')}>{ev.title}</h2>
+                      <span className={cls(
+                        'rounded-full px-2.5 py-1 text-xs font-semibold',
+                        isUpcoming ? 'bg-[#E8F5EB] text-[#137333]' : 'bg-[#F3F4F6] text-[#5F6368]'
+                      )}>
+                        {category}
+                      </span>
+                    </div>
+                    <p className={cls('text-sm text-solid-matte-gray mb-2')}>
+                      {formatDate(ev.date)}
+                      {ev.location && ` · ${ev.location}`}
                     </p>
-                  )}
-                </Link>
-              </li>
-            ))}
+                    {ev.description && (
+                      <p className={cls('text-sm text-solid-matte-gray line-clamp-2')}>
+                        {ev.description}
+                      </p>
+                    )}
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

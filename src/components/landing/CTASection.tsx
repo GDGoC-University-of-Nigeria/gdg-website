@@ -1,6 +1,6 @@
 import Image from 'next/image';
 
-import ctaImage from '@/assets/cta.png';
+import ctaImage from '@/assets/cta.jpg';
 
 const GlobeIcon = () => (
   <svg

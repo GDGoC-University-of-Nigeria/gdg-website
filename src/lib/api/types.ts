@@ -26,6 +26,19 @@ export type PublicFormPayload = {
   payload: unknown;
 };
 
+export type HackathonRegistrationPayload = {
+  full_name: string;
+  email: string;
+  github_link?: string | null;
+  team_name?: string | null;
+};
+
+export type HackathonRegistrationResponse = HackathonRegistrationPayload & {
+  id: string;
+  user_id: string | null;
+  created_at: string;
+};
+
 export type Speaker = {
   id: string;
   event_id: string;

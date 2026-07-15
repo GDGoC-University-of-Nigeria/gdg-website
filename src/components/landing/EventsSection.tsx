@@ -2,9 +2,20 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { api, ApiError } from '@/lib/api';
-import type { Event } from '@/lib/api';
 import { AppModal } from '@/components/shared';
+
+type CommunityEvent = {
+  id: string;
+  title: string;
+  description: string | null;
+  date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  image_url: string | null;
+  location: string | null;
+  external_url: string;
+  source: string;
+};
 
 function formatEventDate(d: string) {
   return new Date(d).toLocaleDateString('en-NG', {
@@ -12,6 +23,15 @@ function formatEventDate(d: string) {
     month: 'long',
     day: 'numeric',
   });
+}
+
+function getEventCategory(date: string | null) {
+  if (!date) return 'Community';
+  const eventDate = new Date(date);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  eventDate.setHours(0, 0, 0, 0);
+  return eventDate >= today ? 'Upcoming' : 'Past';
 }
 
 const AsteriskIcon = () => (
@@ -76,48 +96,39 @@ const ChevronRight = () => (
 
 export const EventsSection = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<CommunityEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CommunityEvent | null>(null);
   const [isDetailsLoading, setIsDetailsLoading] = useState(false);
   const [registerStatus, setRegisterStatus] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    api
-      .getEvents({ limit: 6 })
-      .then((list) => setEvents(Array.isArray(list) ? list : []))
-      .catch(() => setEvents([]))
-      .finally(() => setLoading(false));
+    const loadEvents = async () => {
+      try {
+        const response = await fetch('/api/events/gdg');
+        const payload = (await response.json()) as { events?: CommunityEvent[] };
+        setEvents(Array.isArray(payload.events) ? payload.events : []);
+      } catch {
+        setEvents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEvents();
   }, []);
 
-  const openDetails = async (event: Event) => {
+  const openDetails = async (event: CommunityEvent) => {
     setRegisterStatus(null);
     setSelectedEvent(event);
-    setIsDetailsLoading(true);
-    try {
-      const full = await api.getEvent(event.id);
-      setSelectedEvent(full);
-    } catch {
-      // fall back to the lightweight event if details fail
-    } finally {
-      setIsDetailsLoading(false);
-    }
+    setIsDetailsLoading(false);
   };
 
-  const handleRegister = async () => {
-    if (!selectedEvent) return;
-    setRegisterStatus(null);
-    try {
-      await api.registerForEvent(selectedEvent.id);
-      setRegisterStatus('You are registered for this event 🎉');
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 401) {
-        setRegisterStatus('Please log in to register. You can sign in from the top-right of the page.');
-        return;
-      }
-      setRegisterStatus('Could not register for this event. Please try again.');
-    }
+  const handleRegister = () => {
+    if (!selectedEvent?.external_url) return;
+    setRegisterStatus('Opening the GDG community event page...');
+    window.open(selectedEvent.external_url, '_blank', 'noopener,noreferrer');
   };
 
   const filteredEvents = searchQuery.trim()
@@ -184,12 +195,15 @@ export const EventsSection = () => {
           ) : filteredEvents.length === 0 ? (
             <p className="text-sm text-solid-matte-gray py-8">No events found.</p>
           ) : (
-            filteredEvents.map((event) => (
+            filteredEvents.map((event) => {
+              const category = getEventCategory(event.date);
+              const isUpcoming = category === 'Upcoming';
+
+              return (
               <article
                 key={event.id}
                 className="min-w-[300px] flex-shrink-0 overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-md md:min-w-[340px]"
               >
-                {/* Event Image */}
                 <div className="relative h-44 w-full bg-[#E0E0E0]">
                   {event.image_url ? (
                     <Image
@@ -201,24 +215,35 @@ export const EventsSection = () => {
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-sm text-solid-matte-gray">Event</span>
+                      <span className="text-sm text-solid-matte-gray">Community event</span>
                     </div>
                   )}
                 </div>
 
-                {/* Event Details */}
+                <div className="absolute left-3 top-3">
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${isUpcoming ? 'bg-[#E8F5EB] text-[#137333]' : 'bg-[#F3F4F6] text-[#5F6368]'}`}>
+                    {category}
+                  </span>
+                </div>
+
                 <div className="p-5">
-                  <h3 className="mb-4 min-h-[3.5rem] text-base font-medium leading-snug text-blackout">
+                  <h3 className="mb-3 min-h-[3.5rem] text-base font-medium leading-snug text-blackout">
                     {event.title}
                   </h3>
 
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <p className="text-sm text-blackout">{formatEventDate(event.date)}</p>
-                      {event.location && (
-                        <p className="text-sm text-alexandra">{event.location}</p>
-                      )}
-                    </div>
+                  <div className="space-y-2">
+                    <p className="text-sm text-blackout">
+                      {event.date ? formatEventDate(event.date) : 'See details on GDG community'}
+                    </p>
+                    {event.location && (
+                      <p className="text-sm text-alexandra">{event.location}</p>
+                    )}
+                  </div>
+
+                  <div className="mt-5 flex items-center justify-between gap-3">
+                    <span className="text-xs uppercase tracking-[0.2em] text-solid-matte-gray">
+                      GDG Community
+                    </span>
                     <button
                       type="button"
                       onClick={() => openDetails(event)}
@@ -229,7 +254,8 @@ export const EventsSection = () => {
                   </div>
                 </div>
               </article>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -276,7 +302,7 @@ export const EventsSection = () => {
                   onClick={handleRegister}
                   className="rounded-md bg-alexandra px-4 py-2 text-sm font-medium text-white hover:bg-[#357AE8]"
                 >
-                  Register
+                  Open event page
                 </button>
               </>
             }
@@ -287,7 +313,7 @@ export const EventsSection = () => {
               <div className="space-y-4">
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-blackout">
-                    {formatEventDate(selectedEvent.date)}
+                    {selectedEvent.date ? formatEventDate(selectedEvent.date) : 'Check the GDG community page for timing'}
                   </p>
                   {selectedEvent.start_time && selectedEvent.end_time && (
                     <p className="text-xs text-solid-matte-gray">
@@ -315,20 +341,6 @@ export const EventsSection = () => {
                   <p className="text-sm leading-relaxed text-solid-matte-gray">
                     {selectedEvent.description}
                   </p>
-                )}
-
-                {Array.isArray(selectedEvent.speakers) && selectedEvent.speakers.length > 0 && (
-                  <div>
-                    <h4 className="mb-2 text-sm font-semibold text-blackout">Speakers</h4>
-                    <ul className="space-y-1 text-sm text-solid-matte-gray">
-                      {selectedEvent.speakers.map((speaker) => (
-                        <li key={speaker.id}>
-                          <span className="font-medium text-blackout">{speaker.name}</span>
-                          {speaker.topic && <> — {speaker.topic}</>}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
                 )}
 
                 {registerStatus && (
