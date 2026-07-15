@@ -70,21 +70,20 @@ export function HackathonContent() {
           </section>
 
           <section>
-            <h3 className="text-2xl font-medium text-blackout mb-4">Judges</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <h3 className="text-2xl font-medium text-blackout mb-8">Judges</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-10">
               {['Mark Ndubuisi', 'Nnaemeka Obi', 'Sarah Nzeshi', 'DevDanny'].map((judge, index) => {
-                const colors = ['bg-[#4285F4]', 'bg-[#EA4335]', 'bg-[#FBBC05]', 'bg-[#34A853]'];
+                const borderColors = ['border-[#34A853]', 'border-[#FBBC05]', 'border-[#4285F4]', 'border-[#EA4335]'];
                 return (
-                  <div key={judge} className="flex flex-col items-center p-6 bg-white rounded-xl border border-gray-200 shadow-sm text-center">
-                    <div className={`h-16 w-16 ${colors[index % colors.length]} rounded-full flex items-center justify-center overflow-hidden mb-4 p-1`}>
+                  <div key={judge} className="flex items-center space-x-6">
+                    <div className={`h-20 w-20 shrink-0 rounded-full border-3 ${borderColors[index % borderColors.length]} flex items-center justify-center p-1`}>
                       <img 
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${judge.replace(' ', '')}&backgroundColor=transparent`} 
+                        src={`https://api.dicebear.com/7.x/bottts/svg?seed=${judge.replace(' ', '')}&backgroundColor=transparent`} 
                         alt={judge} 
-                        className="h-full w-full object-cover rounded-full bg-white"
+                        className="h-full w-full object-cover rounded-full bg-[#F0F0F0]"
                       />
                     </div>
-                    <h4 className="text-lg font-medium text-blackout">{judge}</h4>
-                    <p className="text-sm text-solid-matte-gray mt-1">Hackathon Judge</p>
+                    <h4 className="text-xl font-semibold text-blackout">{judge}</h4>
                   </div>
                 );
               })}
