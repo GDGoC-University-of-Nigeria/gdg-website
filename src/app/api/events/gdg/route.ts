@@ -79,7 +79,7 @@ export async function GET() {
 
     const html = await response.text();
     const matches = Array.from(
-      html.matchAll(/<a\b[^>]*href=["']([^"']*\/events\/details\/[^"']*)["'][^>]*>(.*?)<\/a>/gis)
+      html.matchAll(/<a\b[^>]*href=["']([^"']*\/events\/details\/[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi)
     );
 
     const events = matches
