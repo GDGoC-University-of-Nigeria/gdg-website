@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation';
 
 import { useAuth } from '@/contexts/AuthContext';
 
+/**
+ * Client-side guard for admin routes. See RequireAuth — the bearer token lives
+ * in localStorage, so this check can't run in Next middleware.
+ */
 export function RequireAdmin({ children }: { children: React.ReactNode }) {
   const { user, isHydrated } = useAuth();
   const router = useRouter();
