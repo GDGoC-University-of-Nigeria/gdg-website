@@ -635,7 +635,7 @@ export const api = {
   },
 
   getBlogNiches(): Promise<string[]> {
-    return request<string[]>('/blog/niches');
+    return request<string[]>('/blogposts/niches');
   },
 
   getBlogposts(params?: {
@@ -814,7 +814,8 @@ export const api = {
       if (params?.skip !== undefined) search.set('skip', String(params.skip));
       if (params?.limit !== undefined) search.set('limit', String(params.limit));
       const qs = search.toString();
-      return request<HackathonRegistrationResponse[]>(`/hackathon/admin${qs ? `?${qs}` : ''}`);
+      // Trailing slash matters: without it FastAPI 307s to the canonical path.
+      return request<HackathonRegistrationResponse[]>(`/hackathon/admin/${qs ? `?${qs}` : ''}`);
     }
   }
 };
