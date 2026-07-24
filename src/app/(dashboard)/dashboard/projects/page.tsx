@@ -1,24 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button, EmptyState, PageHeader, StatusBadge } from '@/components/ui';
-import { api, ApiError } from '@/lib/api';
-import type { Project } from '@/lib/api';
+import { errorMessage, useProjects } from '@/lib/queries';
 import { cls } from '@/utils';
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: projects = [],
+    isPending: loading,
+    error: queryError
+  } = useProjects({ limit: 50 });
 
-  useEffect(() => {
-    api
-      .getProjects({ limit: 50 })
-      .then(setProjects)
-      .catch((e) => setError(e instanceof ApiError ? e.message : 'Failed to load projects'))
-      .finally(() => setLoading(false));
-  }, []);
+  const error = queryError ? errorMessage(queryError, 'Failed to load projects') : null;
 
   return (
     <div className={cls('space-y-6')}>

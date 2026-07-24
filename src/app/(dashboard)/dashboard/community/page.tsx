@@ -1,39 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { api, ApiError, type User } from '@/lib/api';
+import { useState } from 'react';
 import { cls } from '@/utils';
+import { errorMessage, useCommunityMembers } from '@/lib/queries';
 
 const PAGE_SIZE = 20;
 
 export default function CommunityPage() {
-  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [members, setMembers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [totalLoaded, setTotalLoaded] = useState(0);
 
-  useEffect(() => {
-    if (!user) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true);
-    setError(null);
-    const skip = (page - 1) * PAGE_SIZE;
-    api
-      .getCommunityMembers({ skip, limit: PAGE_SIZE })
-      .then((list) => {
-        setMembers(list);
-        setTotalLoaded(list.length);
-      })
-      .catch((e) => {
-        setError(e instanceof ApiError ? e.message : 'Failed to load members');
-        setMembers([]);
-      })
-      .finally(() => setLoading(false));
-  }, [user, page]);
+  const {
+    data: members = [],
+    isPending,
+    error: queryError
+  } = useCommunityMembers({ skip: (page - 1) * PAGE_SIZE, limit: PAGE_SIZE });
+
+  const loading = isPending;
+  const error = queryError ? errorMessage(queryError, 'Failed to load members') : null;
+  const totalLoaded = members.length;
 
   const filteredMembers = searchQuery.trim()
     ? members.filter(

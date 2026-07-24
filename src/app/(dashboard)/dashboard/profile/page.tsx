@@ -1,17 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, ApiError } from '@/lib/api';
-import type {
-  BlogPostAdmin,
-  Project,
-  EventRegistration,
-  Event
-} from '@/lib/api';
+import type { Project, EventRegistration, Event } from '@/lib/api';
+import {
+  useEvents,
+  useMyBlogposts,
+  useMyEventRegistrations,
+  useProjects
+} from '@/lib/queries';
 import { cls } from '@/utils';
 
 type ProjectWithContributors = Project & {
@@ -33,14 +34,6 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [avatarUploadLoading, setAvatarUploadLoading] = useState(false);
-  const [myPosts, setMyPosts] = useState<BlogPostAdmin[]>([]);
-  const [myProjects, setMyProjects] = useState<ProjectWithContributors[]>([]);
-  const [myRegistrations, setMyRegistrations] = useState<
-    RegistrationWithEvent[]
-  >([]);
-  const [registeredEvents, setRegisteredEvents] = useState<Event[]>([]);
-  const [activityLoading, setActivityLoading] = useState(true);
-
   useEffect(() => {
     if (user) {
       setFullName(user.profile?.full_name ?? '');
@@ -50,40 +43,38 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  useEffect(() => {
-    if (!user) return;
-    setActivityLoading(true);
-    Promise.all([
-      api.getMyBlogposts({ limit: 10 }).catch(() => []),
-      api.getProjects({ limit: 100 }).then((list) => {
-        const arr = Array.isArray(list) ? list : [];
-        return arr.filter((p) => {
-          const proj = p as ProjectWithContributors;
-          if (proj.creator_id === user?.id) return true;
-          return (
-            proj.contributors?.some((c) => c.user_id === user?.id) ?? false
-          );
-        });
-      }),
-      api.getMyRegistrations().catch(() => []),
-      api.getEvents({ limit: 200 }).catch(() => [])
-    ])
-      .then(([posts, projects, regs, events]) => {
-        setMyPosts(Array.isArray(posts) ? posts : []);
-        setMyProjects(projects);
-        const regList = Array.isArray(regs) ? regs : [];
-        setMyRegistrations(regList);
-        const eventList = Array.isArray(events) ? events : [];
-        const regEventIds = new Set(
-          regList.map((r: RegistrationWithEvent) => r.event_id)
-        );
-        setRegisteredEvents(
-          eventList.filter((ev: Event) => regEventIds.has(ev.id))
-        );
-      })
-      .catch(() => {})
-      .finally(() => setActivityLoading(false));
-  }, [user, user?.id]);
+  // Four cached queries instead of one aggregate fetch, so revisiting the page
+  // (or hitting these lists elsewhere) reuses what's already loaded.
+  const myPostsQuery = useMyBlogposts({ limit: 10 });
+  const allProjectsQuery = useProjects({ limit: 100 });
+  const myRegistrationsQuery = useMyEventRegistrations();
+  const allEventsQuery = useEvents({ limit: 200 });
+
+  const myPosts = myPostsQuery.data ?? [];
+  const myRegistrations = useMemo<RegistrationWithEvent[]>(
+    () => (myRegistrationsQuery.data ?? []) as RegistrationWithEvent[],
+    [myRegistrationsQuery.data]
+  );
+
+  const myProjects = useMemo<ProjectWithContributors[]>(() => {
+    const list = (allProjectsQuery.data ?? []) as ProjectWithContributors[];
+    return list.filter(
+      (proj) =>
+        proj.creator_id === user?.id ||
+        (proj.contributors?.some((c) => c.user_id === user?.id) ?? false)
+    );
+  }, [allProjectsQuery.data, user?.id]);
+
+  const registeredEvents = useMemo<Event[]>(() => {
+    const regEventIds = new Set(myRegistrations.map((r) => r.event_id));
+    return (allEventsQuery.data ?? []).filter((ev) => regEventIds.has(ev.id));
+  }, [allEventsQuery.data, myRegistrations]);
+
+  const activityLoading =
+    myPostsQuery.isPending ||
+    allProjectsQuery.isPending ||
+    myRegistrationsQuery.isPending ||
+    allEventsQuery.isPending;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

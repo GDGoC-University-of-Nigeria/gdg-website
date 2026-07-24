@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
+import { useState } from 'react';
 
 import {
   EmptyState,
@@ -9,37 +8,22 @@ import {
   SearchInput,
   Skeleton
 } from '@/components/ui';
-import { useAuth } from '@/contexts/AuthContext';
-import { api, ApiError } from '@/lib/api';
-import type { HackathonRegistrationResponse } from '@/lib/api/types';
+import { errorMessage, useHackathonRegistrations } from '@/lib/queries';
 import { cls } from '@/utils';
 
 export default function AdminHackathonPage() {
-  const { user } = useAuth();
-  
-  if (!user) return null;
-
-  const [registrations, setRegistrations] = useState<HackathonRegistrationResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // RequireAdmin in the layout guarantees an admin user before this mounts.
   const [searchQuery, setSearchQuery] = useState('');
 
-  const loadRegistrations = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const list = await api.hackathon.getRegistrations();
-      setRegistrations(list);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to load hackathon registrations');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    data: registrations = [],
+    isPending: loading,
+    error: queryError
+  } = useHackathonRegistrations(undefined);
 
-  useEffect(() => {
-    loadRegistrations();
-  }, [user]);
+  const error = queryError
+    ? errorMessage(queryError, 'Failed to load hackathon registrations')
+    : null;
 
   const displayList = searchQuery.trim()
     ? registrations.filter(

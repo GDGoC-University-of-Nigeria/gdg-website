@@ -1,42 +1,35 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, ApiError } from '@/lib/api';
 import type { Event, Speaker } from '@/lib/api';
+import { errorMessage, useEvents, useInvalidate } from '@/lib/queries';
 import { cls } from '@/utils';
 
 export default function AdminEventsPage() {
+  // RequireAdmin in the layout guarantees an admin user before this mounts.
   const { user } = useAuth();
-  
-  if (!user) return null;
 
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [managingSpeakersFor, setManagingSpeakersFor] = useState<Event | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const loadEvents = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const list = await api.getEvents({ limit: 100 });
-      setEvents(list);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to load events');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    data: events = [],
+    isPending: loading,
+    error: queryError
+  } = useEvents({ limit: 100 });
+  const invalidate = useInvalidate();
 
-  useEffect(() => {
-    loadEvents();
-  }, []);
+  const displayError =
+    error ?? (queryError ? errorMessage(queryError, 'Failed to load events') : null);
+  // Event edits also move the admin dashboard's event counters.
+  const loadEvents = () => invalidate('events', 'admin');
 
   const handleDelete = async (eventId: string) => {
     if (!user || !confirm('Delete this event?')) return;
@@ -70,9 +63,9 @@ export default function AdminEventsPage() {
         </button>
       </div>
 
-      {error && (
+      {displayError && (
         <div className={cls('rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-red-700')}>
-          {error}
+          {displayError}
         </div>
       )}
 

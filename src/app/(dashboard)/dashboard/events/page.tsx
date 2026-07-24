@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { qk } from '@/lib/queries';
 import { cls } from '@/utils';
 
 type CommunityEvent = {
@@ -17,25 +18,22 @@ type CommunityEvent = {
 };
 
 export default function EventsPage() {
-  const [events, setEvents] = useState<CommunityEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: events = [],
+    isPending: loading,
+    error: queryError
+  } = useQuery({
+    queryKey: qk.gdgCommunityEvents,
+    queryFn: async (): Promise<CommunityEvent[]> => {
+      const response = await fetch('/api/events/gdg');
+      const payload = (await response.json()) as { events?: CommunityEvent[] };
+      return Array.isArray(payload.events) ? payload.events : [];
+    },
+    // Scraped from an external chapter page — refetching often buys nothing.
+    staleTime: 10 * 60_000
+  });
 
-  useEffect(() => {
-    const loadEvents = async () => {
-      try {
-        const response = await fetch('/api/events/gdg');
-        const payload = (await response.json()) as { events?: CommunityEvent[] };
-        setEvents(Array.isArray(payload.events) ? payload.events : []);
-      } catch {
-        setError('Failed to load events');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadEvents();
-  }, []);
+  const error = queryError ? 'Failed to load events' : null;
 
   const formatDate = (d: string | null) => {
     if (!d) return 'See details on GDG community';

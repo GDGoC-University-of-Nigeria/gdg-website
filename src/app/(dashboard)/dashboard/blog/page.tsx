@@ -1,21 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { api, ApiError } from '@/lib/api';
-import type { BlogPost } from '@/lib/api';
+import { errorMessage, useBlogposts } from '@/lib/queries';
 import { cls } from '@/utils';
 
 export default function BlogPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const submittedJustNow = searchParams.get('submitted') === '1';
+
+  const {
+    data: posts = [],
+    isPending: loading,
+    error: queryError
+  } = useBlogposts({ limit: 50 });
+
+  const error = queryError ? errorMessage(queryError, 'Failed to load posts') : null;
 
   useEffect(() => {
     if (!submittedJustNow) return;
@@ -28,13 +32,6 @@ export default function BlogPage() {
     return () => clearTimeout(t);
   }, [submittedJustNow, router]);
 
-  useEffect(() => {
-    api
-      .getBlogposts({ limit: 50 })
-      .then(setPosts)
-      .catch((e) => setError(e instanceof ApiError ? e.message : 'Failed to load posts'))
-      .finally(() => setLoading(false));
-  }, []);
 
   return (
     <div className={cls('space-y-6')}>

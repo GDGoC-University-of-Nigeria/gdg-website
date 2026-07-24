@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
-import { api, ApiError } from '@/lib/api';
-import type { Event, BlogPost, Project } from '@/lib/api';
+import { useBlogposts, useEvents, useProjects } from '@/lib/queries';
 import { cls } from '@/utils';
 
 type QuickStats = {
@@ -85,13 +84,34 @@ const RocketIcon = () => (
 export default function DashboardPage() {
   const { user } = useAuth();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [stats, setStats] = useState<QuickStats>({ events: 0, projects: 0, blogPosts: 0 });
-  const [statsLoading, setStatsLoading] = useState(true);
-  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
-  const [eventsLoading, setEventsLoading] = useState(true);
-  const [featuredArticle, setFeaturedArticle] = useState<BlogPost | null>(null);
-  const [featuredProject, setFeaturedProject] = useState<Project | null>(null);
-  const [featuredLoading, setFeaturedLoading] = useState(true);
+
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+
+  // Three cached queries serve all six things this page shows. Previously the
+  // counters and the featured/upcoming lists fetched the same collections
+  // twice each with different limits.
+  const eventsQuery = useEvents({ from_date: today, limit: 100 });
+  const projectsQuery = useProjects({ status: 'ongoing', limit: 100 });
+  const postsQuery = useBlogposts({ limit: 100 });
+
+  const events = eventsQuery.data ?? [];
+  const projects = projectsQuery.data ?? [];
+  const posts = postsQuery.data ?? [];
+
+  const stats: QuickStats = {
+    events: events.length,
+    projects: projects.length,
+    blogPosts: posts.length
+  };
+  const statsLoading =
+    eventsQuery.isPending || projectsQuery.isPending || postsQuery.isPending;
+
+  const upcomingEvents = events.filter((e) => e.date >= today).slice(0, 5);
+  const eventsLoading = eventsQuery.isPending;
+
+  const featuredArticle = posts[0] ?? null;
+  const featuredProject = projects[0] ?? null;
+  const featuredLoading = postsQuery.isPending || projectsQuery.isPending;
 
   const displayName = user?.profile?.full_name || user?.email || 'Builder';
 
@@ -104,54 +124,8 @@ export default function DashboardPage() {
     }
   };
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setStatsLoading(true);
-    const today = new Date().toISOString().slice(0, 10);
-    Promise.all([
-      api.getEvents({ from_date: today, limit: 100 }).catch(() => []),
-      api.getProjects({ status: 'ongoing', limit: 100 }).catch(() => []),
-      api.getBlogposts({ limit: 100 }).catch(() => []),
-    ])
-      .then(([events, projects, posts]) => {
-        setStats({
-          events: Array.isArray(events) ? events.length : 0,
-          projects: Array.isArray(projects) ? projects.length : 0,
-          blogPosts: Array.isArray(posts) ? posts.length : 0,
-        });
-      })
-      .finally(() => setStatsLoading(false));
-  }, []);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setEventsLoading(true);
-    const today = new Date().toISOString().slice(0, 10);
-    api
-      .getEvents({ from_date: today, limit: 20 })
-      .then((events) => {
-        const list = Array.isArray(events) ? events : [];
-        const upcoming = list.filter((e) => e.date >= today).slice(0, 5);
-        setUpcomingEvents(upcoming);
-      })
-      .catch(() => setUpcomingEvents([]))
-      .finally(() => setEventsLoading(false));
-  }, []);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setFeaturedLoading(true);
-    Promise.all([
-      api.getBlogposts({ limit: 1 }).then((posts) => (Array.isArray(posts) && posts.length > 0 ? posts[0] : null)),
-      api.getProjects({ status: 'ongoing', limit: 1 }).then((projs) => (Array.isArray(projs) && projs.length > 0 ? projs[0] : null)),
-    ])
-      .then(([article, project]) => {
-        setFeaturedArticle(article);
-        setFeaturedProject(project);
-      })
-      .catch(() => {})
-      .finally(() => setFeaturedLoading(false));
-  }, []);
 
   return (
     <div className={cls('space-y-0')}>

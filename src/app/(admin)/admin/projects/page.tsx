@@ -5,15 +5,13 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, ApiError } from '@/lib/api';
 import type { Project, ProjectContributor, ProjectApplication, User } from '@/lib/api';
+import { errorMessage, useInvalidate, useProjects } from '@/lib/queries';
 import { cls } from '@/utils';
 
 export default function AdminProjectsPage() {
+  // RequireAdmin in the layout guarantees an admin user before this mounts.
   const { user } = useAuth();
-  
-  if (!user) return null;
 
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -21,25 +19,20 @@ export default function AdminProjectsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
 
-  const loadProjects = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const list = await api.getProjects({
-        limit: 100,
-        status: statusFilter === 'all' ? undefined : statusFilter,
-      });
-      setProjects(list);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to load projects');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    data: projects = [],
+    isPending: loading,
+    error: queryError
+  } = useProjects({
+    limit: 100,
+    status: statusFilter === 'all' ? undefined : statusFilter
+  });
+  const invalidate = useInvalidate();
 
-  useEffect(() => {
-    loadProjects();
-  }, [statusFilter]);
+  const displayError =
+    error ?? (queryError ? errorMessage(queryError, 'Failed to load projects') : null);
+  // Approving or deleting a project also moves the admin dashboard counters.
+  const loadProjects = () => invalidate('projects', 'admin');
 
   const handleDelete = async (id: string) => {
     if (!user) return;
@@ -91,9 +84,9 @@ export default function AdminProjectsPage() {
         </div>
       </div>
 
-      {error && (
+      {displayError && (
         <div className={cls('rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-red-700')}>
-          {error}
+          {displayError}
         </div>
       )}
 

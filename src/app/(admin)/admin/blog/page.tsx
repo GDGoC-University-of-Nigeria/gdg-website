@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -15,52 +15,47 @@ import {
   StatusBadge
 } from '@/components/ui';
 import { useAuth } from '@/contexts/AuthContext';
-import { api, ApiError, type BlogPostAdmin } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
+import { errorMessage, useAdminBlogposts } from '@/lib/queries';
 import { cls } from '@/utils';
 
-export default function AdminBlogPage() {
-  const { user } = useAuth();
-  
-  if (!user) return null;
+const PAGE_SIZE = 12;
 
-  const [posts, setPosts] = useState<BlogPostAdmin[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function AdminBlogPage() {
+  // RequireAdmin in the layout guarantees an admin user before this mounts.
+  const { user } = useAuth();
+
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
-  const [hasNext, setHasNext] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
   const [deleting, setDeleting] = useState(false);
 
-  const PAGE_SIZE = 12;
+  // Fetch one extra row to detect a next page without a count endpoint.
+  const {
+    data: fetched = [],
+    isPending: loading,
+    error: queryError,
+    refetch
+  } = useAdminBlogposts({
+    ...(statusFilter !== 'all' && { status: statusFilter }),
+    ...(query.trim() && { q: query.trim() }),
+    skip: (page - 1) * PAGE_SIZE,
+    limit: PAGE_SIZE + 1
+  });
+
+  const hasNext = fetched.length > PAGE_SIZE;
+  const posts = fetched.slice(0, PAGE_SIZE);
+  const displayError =
+    error ?? (queryError ? errorMessage(queryError, 'Failed to load posts') : null);
 
   const loadPosts = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const skip = (page - 1) * PAGE_SIZE;
-      const list = await api.getAdminBlogposts({
-        ...(statusFilter !== 'all' && { status: statusFilter }),
-        ...(query.trim() && { q: query.trim() }),
-        skip,
-        limit: PAGE_SIZE + 1
-      });
-      setHasNext(list.length > PAGE_SIZE);
-      setPosts(list.slice(0, PAGE_SIZE));
-      setSelected([]);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to load posts');
-    } finally {
-      setLoading(false);
-    }
+    setSelected([]);
+    await refetch();
   };
-
-  useEffect(() => {
-    loadPosts();
-  }, [user, statusFilter, page, query]);
 
   const handleApprove = async (postId: string) => {
     if (!user) return;
@@ -190,9 +185,9 @@ export default function AdminBlogPage() {
         </div>
       </div>
 
-      {error && (
+      {displayError && (
         <div className={cls('rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-red-700')}>
-          {error}
+          {displayError}
         </div>
       )}
 

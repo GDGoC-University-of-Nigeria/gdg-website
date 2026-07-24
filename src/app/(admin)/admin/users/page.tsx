@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -14,37 +14,28 @@ import {
 } from '@/components/ui';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, ApiError, type User } from '@/lib/api';
+import { errorMessage, useAdminUsers, useInvalidate } from '@/lib/queries';
 import { cls } from '@/utils';
 
 export default function AdminUsersPage() {
+  // RequireAdmin in the layout guarantees an admin user before this mounts.
   const { user } = useAuth();
-  
-  if (!user) return null;
 
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [actionUserId, setActionUserId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [confirmDeactivateId, setConfirmDeactivateId] = useState<string | null>(null);
   const [confirmReactivateId, setConfirmReactivateId] = useState<string | null>(null);
 
-  const loadUsers = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const list = await api.getUsers();
-      setUsers(list);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: users = [], isPending: loading, error: queryError } = useAdminUsers();
+  const invalidate = useInvalidate();
 
-  useEffect(() => {
-    loadUsers();
-  }, [user]);
+  const setError = setActionError;
+  const error =
+    actionError ?? (queryError ? errorMessage(queryError, 'Failed to load users') : null);
+  // Deactivating or promoting a user also changes the admin dashboard counts,
+  // so drop both caches rather than just refetching this list.
+  const loadUsers = () => invalidate('users', 'admin');
 
   const displayList = searchQuery.trim()
     ? users.filter(
