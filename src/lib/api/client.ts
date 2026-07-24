@@ -47,30 +47,113 @@ const getExternalApiUrl = (): string => {
   return url.replace(/\/$/, '');
 };
 
+/**
+ * Token storage.
+ *
+ * The API lives on a different origin than this app, so an auth cookie set by
+ * the API is a third-party cookie — dropped by Safari/Firefox and being phased
+ * out in Chrome. Sessions are bearer tokens instead, persisted in
+ * localStorage so they survive a page reload, a new tab, and a direct visit to
+ * a protected route. An in-memory copy avoids touching storage on every call.
+ */
+const ACCESS_TOKEN_KEY = 'gdg.access_token';
+const REFRESH_TOKEN_KEY = 'gdg.refresh_token';
+
 let _accessToken: string | null = null;
+let _refreshToken: string | null = null;
+let _loadedFromStorage = false;
+
+function readStorage(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    // Private mode / storage disabled — fall back to memory-only for this tab.
+    return null;
+  }
+}
+
+function writeStorage(key: string, value: string | null): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (value) window.localStorage.setItem(key, value);
+    else window.localStorage.removeItem(key);
+  } catch {
+    // Ignore — memory copy still serves this tab.
+  }
+}
+
+function hydrateFromStorage(): void {
+  if (_loadedFromStorage || typeof window === 'undefined') return;
+  _loadedFromStorage = true;
+  _accessToken = readStorage(ACCESS_TOKEN_KEY);
+  _refreshToken = readStorage(REFRESH_TOKEN_KEY);
+}
 
 export function setAccessToken(token: string | null) {
+  _loadedFromStorage = true;
   _accessToken = token;
+  writeStorage(ACCESS_TOKEN_KEY, token);
+}
+
+export function setRefreshToken(token: string | null) {
+  _loadedFromStorage = true;
+  _refreshToken = token;
+  writeStorage(REFRESH_TOKEN_KEY, token);
+}
+
+export function getAccessToken(): string | null {
+  hydrateFromStorage();
+  return _accessToken;
+}
+
+export function getRefreshToken(): string | null {
+  hydrateFromStorage();
+  return _refreshToken;
+}
+
+export function clearTokens(): void {
+  setAccessToken(null);
+  setRefreshToken(null);
+}
+
+/** True when we hold a token — lets callers skip a doomed /users/me call. */
+export function hasStoredSession(): boolean {
+  return Boolean(getAccessToken() || getRefreshToken());
+}
+
+type OAuthTokens = { accessToken: string | null; refreshToken: string | null };
+
+/** Read the tokens the API put on the OAuth callback URL (query or hash). */
+export function readOAuthTokensFromWindow(): OAuthTokens {
+  if (typeof window === 'undefined')
+    return { accessToken: null, refreshToken: null };
+
+  const pick = (params: URLSearchParams): OAuthTokens => ({
+    accessToken:
+      params.get('access_token')?.trim() || params.get('token')?.trim() || null,
+    refreshToken: params.get('refresh_token')?.trim() || null
+  });
+
+  const fromQuery = pick(new URLSearchParams(window.location.search));
+  if (fromQuery.accessToken) return fromQuery;
+
+  const rawHash = window.location.hash.replace(/^#/, '');
+  if (!rawHash) return { accessToken: null, refreshToken: null };
+  return pick(new URLSearchParams(rawHash));
 }
 
 export function readOAuthBearerFromWindow(): string | null {
-  if (typeof window === 'undefined') return null;
-  const qs = new URLSearchParams(window.location.search);
-  const fromQuery =
-    qs.get('access_token')?.trim() || qs.get('token')?.trim() || null;
-  if (fromQuery) return fromQuery;
-
-  const rawHash = window.location.hash.replace(/^#/, '');
-  if (!rawHash) return null;
-  const hp = new URLSearchParams(rawHash);
-  return hp.get('access_token')?.trim() || hp.get('token')?.trim() || null;
+  return readOAuthTokensFromWindow().accessToken;
 }
+
+const OAUTH_URL_KEYS = ['access_token', 'refresh_token', 'token'];
 
 export function stripOAuthTokenFromBrowserUrl(): void {
   if (typeof window === 'undefined') return;
   const url = new URL(window.location.href);
   let changed = false;
-  for (const key of ['access_token', 'token']) {
+  for (const key of OAUTH_URL_KEYS) {
     if (url.searchParams.has(key)) {
       url.searchParams.delete(key);
       changed = true;
@@ -78,9 +161,8 @@ export function stripOAuthTokenFromBrowserUrl(): void {
   }
   if (url.hash) {
     const hp = new URLSearchParams(url.hash.replace(/^#/, ''));
-    if (hp.has('access_token') || hp.has('token')) {
-      hp.delete('access_token');
-      hp.delete('token');
+    if (OAUTH_URL_KEYS.some((key) => hp.has(key))) {
+      for (const key of OAUTH_URL_KEYS) hp.delete(key);
       const rest = hp.toString();
       url.hash = rest ? `#${rest}` : '';
       changed = true;
@@ -95,42 +177,111 @@ export function stripOAuthTokenFromBrowserUrl(): void {
   }
 }
 
+function resolveUrl(path: string): string {
+  if (path.startsWith('http')) return path;
+  const base = getApiUrl();
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return base ? `${base}${normalizedPath}` : `/api-proxy${normalizedPath}`;
+}
+
+function parseErrorMessage(data: unknown, res: Response): string {
+  if (typeof data === 'object' && data !== null && 'detail' in data) {
+    const detail = (data as { detail: unknown }).detail;
+    if (Array.isArray(detail)) {
+      return (detail as Array<{ msg?: string }>).map((d) => d.msg ?? '').join(', ');
+    }
+    return String(detail);
+  }
+  return res.statusText || `Request failed (${res.status})`;
+}
+
+async function parseBody(res: Response): Promise<unknown> {
+  const text = await res.text();
+  if (!text) return undefined;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
+/**
+ * Exchange the refresh token for a new access token.
+ *
+ * Concurrent 401s share one in-flight call so a page that fires several
+ * requests at once doesn't burn several refreshes. Resolves to the new token,
+ * or null when there's nothing to refresh with (caller should treat as logged
+ * out).
+ */
+let _refreshInFlight: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return null;
+
+  _refreshInFlight ??= (async () => {
+    try {
+      const res = await fetch(resolveUrl('/auth/refresh'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken })
+      });
+      if (!res.ok) {
+        // Refresh token is expired or invalid — the session is over.
+        clearTokens();
+        return null;
+      }
+      const data = (await parseBody(res)) as { access_token?: string } | undefined;
+      const token = data?.access_token ?? null;
+      if (token) setAccessToken(token);
+      else clearTokens();
+      return token;
+    } catch {
+      // Network error — keep the tokens; this may just be a blip.
+      return null;
+    } finally {
+      _refreshInFlight = null;
+    }
+  })();
+
+  return _refreshInFlight;
+}
+
 export async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const base = getApiUrl();
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  const url = path.startsWith('http')
-    ? path
-    : base
-      ? `${base}${normalizedPath}`
-      : `/api-proxy${normalizedPath}`;
+  const url = resolveUrl(path);
   const isFormData =
     typeof FormData !== 'undefined' && options.body instanceof FormData;
-  const headers: HeadersInit = {
-    ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
-    ...(_accessToken ? { Authorization: `Bearer ${_accessToken}` } : {}),
-    ...(options.headers as Record<string, string>)
+
+  const send = (token: string | null) => {
+    const headers: HeadersInit = {
+      ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers as Record<string, string>)
+    };
+    // No `credentials` — auth rides in the Authorization header, not cookies.
+    return fetch(url, { ...options, headers });
   };
-  const res = await fetch(url, { ...options, headers, credentials: 'include' });
-  const text = await res.text();
-  let data: unknown;
-  try {
-    data = text ? JSON.parse(text) : undefined;
-  } catch {
-    data = text;
+
+  let res = await send(getAccessToken());
+
+  if (res.status === 401) {
+    // Access tokens are short-lived; try one refresh and replay the call.
+    // FormData bodies can't be replayed safely once consumed, so skip those.
+    // (refreshAccessToken clears the tokens itself if the refresh is rejected;
+    // a network blip leaves them alone so the session survives it.)
+    const refreshed =
+      !isFormData && getRefreshToken() ? await refreshAccessToken() : null;
+
+    if (refreshed) res = await send(refreshed);
+    else if (!getRefreshToken()) clearTokens(); // stale access token, nothing to renew with
   }
+
+  const data = await parseBody(res);
   if (!res.ok) {
-    const message =
-      typeof data === 'object' && data !== null && 'detail' in data
-        ? Array.isArray((data as { detail: unknown }).detail)
-          ? (data as { detail: Array<{ msg?: string }> }).detail
-              .map((d) => d.msg ?? '')
-              .join(', ')
-          : String((data as { detail: string }).detail)
-        : res.statusText || `Request failed (${res.status})`;
-    throw new ApiError(message, res.status, data);
+    throw new ApiError(parseErrorMessage(data, res), res.status, data);
   }
   return data as T;
 }

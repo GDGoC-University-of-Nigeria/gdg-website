@@ -1,11 +1,11 @@
 import Image from 'next/image';
 
 const partnerLogos = [
-  { name: 'Blockchain UNN', src: '/images/partners/blockchainunn.svg', className: 'h-64 w-auto' },
+  { name: 'Blockchain UNN', src: '/images/partners/blockchainunn.svg', className: 'h-20 w-auto max-w-56 sm:h-24 md:h-28' },
   { name: 'Ethenugu', src: '/images/partners/ethenugu.svg', className: 'h-20 w-auto max-w-56 sm:h-24 md:h-28' },
-  { name: 'GIDA', src: '/images/partners/gida.svg', className: 'h-56 w-auto' },
+  { name: 'GIDA', src: '/images/partners/gida.svg', className: 'h-20 w-auto max-w-56 sm:h-24 md:h-28' },
   { name: 'Open Source Nest', src: '/images/partners/opensourcenest.svg', className: 'h-16 w-auto max-w-45 sm:h-20 md:h-24' },
-  { name: 'The Block Hive', src: '/images/partners/logo-yellow.webp', className: 'h-16 w-auto ' },
+  { name: 'GDG UNN', src: '/images/partners/logo-yellow.webp', className: 'h-16 w-auto max-w-45 sm:h-20 md:h-24' },
 ];
 
 export const SponsorsSection = () => {

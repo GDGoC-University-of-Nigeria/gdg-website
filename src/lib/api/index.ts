@@ -3,7 +3,13 @@ export {
   request,
   ApiError,
   setAccessToken,
+  setRefreshToken,
+  getAccessToken,
+  getRefreshToken,
+  clearTokens,
+  hasStoredSession,
   readOAuthBearerFromWindow,
+  readOAuthTokensFromWindow,
   stripOAuthTokenFromBrowserUrl
 } from './client';
 export type {

@@ -6,34 +6,11 @@ function stripTags(value: string): string {
   return value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-const monthsMap: Record<string, string> = {
-  ene: 'Jan', feb: 'Feb', mar: 'Mar', abr: 'Apr', may: 'May', jun: 'Jun',
-  jul: 'Jul', ago: 'Aug', sep: 'Sep', oct: 'Oct', nov: 'Nov', dic: 'Dec',
-  jan: 'Jan', apr: 'Apr', aug: 'Aug', dec: 'Dec'
-};
-
-function parseDate(textContent: string): string | null {
-  let match = textContent.match(/([A-Za-z]{3})\s+(\d{1,2}),\s+(\d{4})/);
-  if (match) {
-    const parsed = new Date(`${match[1]} ${match[2]}, ${match[3]}`);
-    if (!isNaN(parsed.getTime())) return parsed.toISOString();
-  }
-  match = textContent.match(/(\d{1,2})\s+([A-Za-z]{3,})\s+(\d{4})/i);
-  if (match) {
-    const day = match[1];
-    const monthRaw = match[2].toLowerCase().substring(0, 3);
-    const month = monthsMap[monthRaw] || monthRaw;
-    const parsed = new Date(`${month} ${day}, ${match[3]}`);
-    if (!isNaN(parsed.getTime())) return parsed.toISOString();
-  }
-  return null;
-}
-
 function parseEventFromAnchor(anchorHtml: string, href: string) {
   const textContent = stripTags(anchorHtml);
   if (!textContent) return null;
 
-  const date = parseDate(textContent);
+  const dateMatch = textContent.match(/([A-Za-z]{3}\s+\d{1,2},\s+\d{4})/);
   const imageMatch = anchorHtml.match(/<img[^>]+src=["']([^"']+)["']/i);
   const locationMatch = textContent.match(/GDG on Campus.*$/i);
 
@@ -48,6 +25,7 @@ function parseEventFromAnchor(anchorHtml: string, href: string) {
   }
 
   const location = locationMatch ? locationMatch[0].trim() : null;
+  const date = dateMatch?.[1] ?? null;
 
   return {
     id: href,
@@ -79,6 +57,8 @@ export async function GET() {
 
     const html = await response.text();
     const matches = Array.from(
+      // [\s\S] rather than `.` + the `s` flag: same "match across newlines"
+      // behaviour, but the `s` flag needs an ES2018 target and tsconfig is ES2017.
       html.matchAll(/<a\b[^>]*href=["']([^"']*\/events\/details\/[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi)
     );
 

@@ -5,8 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   api,
-  readOAuthBearerFromWindow,
+  readOAuthTokensFromWindow,
   setAccessToken,
+  setRefreshToken,
   stripOAuthTokenFromBrowserUrl
 } from '@/lib/api';
 
@@ -15,16 +16,25 @@ function CallbackContent() {
   const searchParams = useSearchParams();
   const { setUser } = useAuth();
 
-  // Layout: set Bearer before AuthProvider hydration useEffect fires getMe (avoids 401 races).
+  // Layout effect: store the tokens before AuthProvider's hydration effect
+  // fires getMe (avoids a 401 race).
   useLayoutEffect(() => {
-    const bearer = readOAuthBearerFromWindow();
-    if (bearer) {
-      setAccessToken(bearer);
+    const { accessToken, refreshToken } = readOAuthTokensFromWindow();
+    if (accessToken) {
+      setAccessToken(accessToken);
+      setRefreshToken(refreshToken);
+      // Keep the tokens out of history, the address bar, and any Referer.
       stripOAuthTokenFromBrowserUrl();
     }
   }, []);
 
   useEffect(() => {
+    const error = searchParams.get('error');
+    if (error) {
+      router.replace(`/auth?error=${encodeURIComponent(error)}`);
+      return;
+    }
+
     const profile_complete = searchParams.get('profile_complete') === 'true';
 
     api.getMe()

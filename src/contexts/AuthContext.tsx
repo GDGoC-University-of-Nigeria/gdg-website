@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { api, setAccessToken, type User } from '@/lib/api';
+import { api, clearTokens, hasStoredSession, type User } from '@/lib/api';
 
 type AuthState = {
   user: User | null;
@@ -26,13 +26,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await api.logout();
     } finally {
-      setAccessToken(null);
+      clearTokens();
       setUser(null);
     }
   }, []);
 
 
   useEffect(() => {
+    // No stored token means no session to restore — settle immediately instead
+    // of waiting on a /users/me that can only 401.
+    if (!hasStoredSession()) {
+      setUser(null);
+      setIsHydrated(true);
+      return;
+    }
+
     let cancelled = false;
     const timeout = setTimeout(() => {
       if (!cancelled) {
