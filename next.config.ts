@@ -26,10 +26,17 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
+    // Accept NEXT_PUBLIC_API_URL with or without the /api/v1 prefix, matching
+    // the normalisation in src/lib/api/client.ts.
+    const apiOrigin = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000')
+      .trim()
+      .replace(/\/+$/, '')
+      .replace(/\/api\/v1$/, '');
+
     return [
       {
         source: '/api-proxy/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'}/:path*`
+        destination: `${apiOrigin}/api/v1/:path*`
       }
     ];
   }

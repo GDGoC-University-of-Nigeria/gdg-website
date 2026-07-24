@@ -28,6 +28,26 @@ export class ApiError extends Error {
   }
 }
 
+/** Every API route lives under this prefix — it belongs in code, not in config. */
+const API_PREFIX = '/api/v1';
+
+/**
+ * The API origin, with any version prefix and trailing slashes stripped.
+ *
+ * NEXT_PUBLIC_API_URL is accepted either as a bare origin
+ * (https://api.example.com) or with the prefix already on it
+ * (https://api.example.com/api/v1). Both normalise to the same thing, so an
+ * env var set without the prefix can't silently 404 every request.
+ */
+const getApiOrigin = (): string => {
+  const url = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (!url) return 'http://localhost:8000';
+  return url.replace(/\/+$/, '').replace(/\/api\/v1$/, '');
+};
+
+/** Absolute API base, e.g. https://api-gdgunn.onrender.com/api/v1 */
+const getExternalApiUrl = (): string => `${getApiOrigin()}${API_PREFIX}`;
+
 const getApiUrl = (): string => {
   // In local dev, use Next.js rewrite proxy to avoid browser CORS preflights.
   if (
@@ -36,15 +56,7 @@ const getApiUrl = (): string => {
   ) {
     return '';
   }
-  const url = process.env.NEXT_PUBLIC_API_URL;
-  if (!url) return 'http://localhost:8000';
-  return url.replace(/\/$/, '');
-};
-
-const getExternalApiUrl = (): string => {
-  const url = process.env.NEXT_PUBLIC_API_URL;
-  if (!url) return 'http://localhost:8000';
-  return url.replace(/\/$/, '');
+  return getExternalApiUrl();
 };
 
 /**
