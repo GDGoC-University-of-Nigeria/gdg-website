@@ -3,8 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { AppModal } from '@/components/shared';
-import { api, type Event as BackendEvent } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
 
 type CommunityEvent = {
   id: string;
@@ -15,7 +13,7 @@ type CommunityEvent = {
   end_time: string | null;
   image_url: string | null;
   location: string | null;
-  external_url?: string;
+  external_url: string;
   source: string;
 };
 
@@ -104,47 +102,13 @@ export const EventsSection = () => {
   const [isDetailsLoading, setIsDetailsLoading] = useState(false);
   const [registerStatus, setRegisterStatus] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
 
   useEffect(() => {
     const loadEvents = async () => {
       try {
-        const [scrapedRes, backendEvents] = await Promise.allSettled([
-          fetch('/api/events/gdg').then(res => res.json()),
-          api.getEvents()
-        ]);
-
-        const merged: CommunityEvent[] = [];
-
-        if (backendEvents.status === 'fulfilled') {
-          merged.push(...backendEvents.value.map(e => ({
-            id: e.id,
-            title: e.title,
-            description: e.description,
-            date: e.date,
-            start_time: e.start_time,
-            end_time: e.end_time,
-            image_url: e.image_url,
-            location: e.location,
-            source: 'internal'
-          })));
-        }
-
-        if (scrapedRes.status === 'fulfilled') {
-          const payload = scrapedRes.value as { events?: CommunityEvent[] };
-          if (Array.isArray(payload.events)) {
-            merged.push(...payload.events);
-          }
-        }
-
-        // Sort by date descending
-        merged.sort((a, b) => {
-          const dateA = a.date ? new Date(a.date).getTime() : 0;
-          const dateB = b.date ? new Date(b.date).getTime() : 0;
-          return dateB - dateA;
-        });
-
-        setEvents(merged);
+        const response = await fetch('/api/events/gdg');
+        const payload = (await response.json()) as { events?: CommunityEvent[] };
+        setEvents(Array.isArray(payload.events) ? payload.events : []);
       } catch {
         setEvents([]);
       } finally {
@@ -161,27 +125,10 @@ export const EventsSection = () => {
     setIsDetailsLoading(false);
   };
 
-  const handleRegister = async () => {
-    if (!selectedEvent) return;
-    
-    if (selectedEvent.external_url) {
-      setRegisterStatus('Opening the GDG community event page...');
-      window.open(selectedEvent.external_url, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
-    if (!user) {
-      setRegisterStatus('Please log in to register for this event.');
-      return;
-    }
-
-    try {
-      setRegisterStatus('Registering...');
-      await api.registerForEvent(selectedEvent.id);
-      setRegisterStatus('Successfully registered for this event!');
-    } catch (e: any) {
-      setRegisterStatus(e.message || 'Failed to register for this event.');
-    }
+  const handleRegister = () => {
+    if (!selectedEvent?.external_url) return;
+    setRegisterStatus('Opening the GDG community event page...');
+    window.open(selectedEvent.external_url, '_blank', 'noopener,noreferrer');
   };
 
   const filteredEvents = searchQuery.trim()
@@ -274,7 +221,7 @@ export const EventsSection = () => {
                 </div>
 
                 <div className="absolute left-3 top-3">
-                  <span className={`uppercase px-2.5 py-1 text-xs font-semibold ${isUpcoming ? 'bg-[#E8F5EB] text-[#137333]' : 'bg-[#F3F4F6] text-[#5F6368]'}`}>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${isUpcoming ? 'bg-[#E8F5EB] text-[#137333]' : 'bg-[#F3F4F6] text-[#5F6368]'}`}>
                     {category}
                   </span>
                 </div>
@@ -295,7 +242,7 @@ export const EventsSection = () => {
 
                   <div className="mt-5 flex items-center justify-between gap-3">
                     <span className="text-xs uppercase tracking-[0.2em] text-solid-matte-gray">
-                      {event.source === 'internal' ? 'GDG UNN' : 'GDG Community'}
+                      GDG Community
                     </span>
                     <button
                       type="button"
