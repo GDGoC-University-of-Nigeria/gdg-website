@@ -59,20 +59,6 @@ export default async function RootLayout({ children }: LayoutProps) {
     <html lang="en" className={productSans.variable} suppressHydrationWarning>
       <body className="font-product-sans bg-white">
         <Providers>{children}</Providers>
-       <div className="fixed bottom-3 right-3"> 
-         <a
-                href="https://websitelaunches.com/site/gdgunn.xyz"
-                target="_blank"
-                rel="noopener"
-              >
-                <img
-                  src="https://websitelaunches.com/badge/gdgunn.xyz.svg?theme=dark"
-                  alt="Established online - Public launch record"
-                  width="255"
-                  height="55"
-                />
-              </a>
-         </div>
       </body>
     </html>
   );
